@@ -118,6 +118,8 @@ tr.sel td { background: var(--accent-wash); }
 .notes { display: grid; gap: 8px; font-size: 14px; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 18px; }
 .notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 80ch; }
 .notes code { font-family: var(--mono); font-size: 13px; }
+.credits { display: grid; gap: 6px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+.credits a { color: var(--ink-2); }
 @media (prefers-reduced-motion: no-preference) { .lrow .bar i { transition: width 180ms ease-out; } }
 </style>
 
@@ -175,12 +177,18 @@ tr.sel td { background: var(--accent-wash); }
       <li>The vans drive for other work, not coverage surveys, so only roads they used are covered: 8 hours in Oct–Nov 2022, about 1 hour in Sep 2023 and 3 hours in Jul 2024 (4G).</li>
       <li>Thresholds follow Ofcom: 4G outdoor −105 dBm and indoor/in-car −95 dBm; 5G high confidence −110 dBm and very high confidence −100 dBm (SS-RSRP).</li>
       <li>5G for O2 and Vodafone is missing: the scanner was not tuned to their 5G channels in the Exeter passes. That does not mean they have no 5G here.</li>
-      <li>Each cell value is a median of per-pass medians, so a van parked with the scanner running counts once. One such stop at SX 916 909 logged about 480,000 5G readings in 2022.</li>
+      <li>Each cell value is a median of per-pass medians, so a van parked with the scanner running counts once. One such stop logged about 480,000 5G readings in 2022.</li>
       <li>In 3D view, column height is the signal level above the weakest value on the chart axis, exaggerated 14 m per dB. Colour carries the same value, so the flat view loses nothing.</li>
       <li>Basemap roads, rail, water and parks are from OpenStreetMap (© OpenStreetMap contributors, ODbL), bundled into the page.</li>
       <li>The grid is also saved as <code>data/derived/exeter_grid_100m.gpkg</code> (EPSG:27700) for QGIS.</li>
     </ul>
   </section>
+
+  <footer class="credits">
+    <p>Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>. Sources: Ofcom, <a href="https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/mobile-signal-strength-measurement-data" target="_blank" rel="noopener">mobile signal strength measurement data</a>, and Ofcom, <a href="https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-2025/data-downloads-2025" target="_blank" rel="noopener">Connected Nations 2025</a>. The data has been filtered, aggregated and re-binned for this page.</p>
+    <p>Basemap © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, available under the Open Database Licence. Map rendering by <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> (BSD-3-Clause).</p>
+    <p>This is an independent project. It is not produced, approved or endorsed by Ofcom or any mobile operator. <a href="https://github.com/petersolan/Mobile-Signal-Strength" target="_blank" rel="noopener">Source code and data</a>.</p>
+  </footer>
 </div>
 
 <script id="data" type="application/json">__DATA__</script>
@@ -304,7 +312,7 @@ tr.sel td { background: var(--accent-wash); }
     });
     map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
-    map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'Basemap © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · Signal data Ofcom, OGL v3' }), 'bottom-right');
+    map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'Basemap © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · Signal data: Ofcom, <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">OGL v3.0</a>' }), 'bottom-right');
     for (const L of LANDMARKS) {
       const el = document.createElement('div'); el.className = 'lm'; el.innerHTML = `<i></i><span>${L.name}</span>`;
       new maplibregl.Marker({ element: el, anchor: 'left', offset: [-5, 0] }).setLngLat([L.lon, L.lat]).addTo(map);

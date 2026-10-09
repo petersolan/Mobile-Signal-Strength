@@ -28,7 +28,7 @@ All survey years combined. Each square's value is its median RSRP (SS-RSRP for 5
 - The vans have roof-mounted antennas and Ofcom applies no correction for antenna gain. A phone inside a car or a building will see weaker signal.
 - The vans drive for other work, not coverage surveys. Only roads they used are measured: about 8 hours in Oct–Nov 2022, 1 hour in Sep 2023 and 3 hours in Jul 2024.
 - O2 and Vodafone 5G are missing. The scanners were not tuned to their 5G channels on the Exeter passes, so this says nothing about whether they have 5G there.
-- In one 2022 stop the van was parked with the scanner running and logged about 480,000 5G readings at one spot. Each square's value is therefore the median of per-pass medians, so a parked van counts as one pass.
+- In one 2022 stop the van was parked with the scanner running and logged about 480,000 5G readings in a single 100 m square. Each square's value is therefore the median of per-pass medians, so a parked van counts as one pass.
 
 ## Repository layout
 
@@ -75,8 +75,13 @@ To study another area, change `BBOX` in `scripts/config.py`. Check that `RELEASE
 
 ## Data sources and licences
 
-- **Ofcom**, [mobile signal strength measurement data](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/mobile-signal-strength-measurement-data) (4G LTE 2022–2024, 5G NR Oct–Dec 2022, Sep 2023, 2024). Open Government Licence v3.0. The methodology PDF on that page defines the fields.
-- **Ofcom**, [Connected Nations 2025](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-2025/data-downloads-2025) predicted coverage for Exeter local authority (E07000041), quoted on the page for comparison. Open Government Licence v3.0.
-- **OpenStreetMap** basemap, © OpenStreetMap contributors, [ODbL](https://www.openstreetmap.org/copyright).
+Contains public sector information licensed under the [Open Government Licence v3.0](https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/).
 
-Code is MIT licensed (see `LICENSE`).
+- **Ofcom**, [mobile signal strength measurement data](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/mobile-signal-strength-measurement-data) (4G LTE 2022–2024; 5G NR Oct–Dec 2022, Sep 2023 and 2024). The methodology PDF on that page defines the fields. In this repo the data is filtered to Exeter, cleaned, re-projected and aggregated to a 100 m grid.
+- **Ofcom**, [Connected Nations 2025](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-2025/data-downloads-2025): predicted coverage for Exeter local authority (E07000041), quoted on the page for comparison.
+- **OpenStreetMap** basemap, © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright). The simplified basemap in `data/derived/exeter_map.json` is a derivative database and is available under the [Open Database Licence](https://opendatacommons.org/licenses/odbl/1-0/).
+- **MapLibre GL JS** renders the map. Its stylesheet is included under BSD-3-Clause; see `viz/MAPLIBRE-LICENSE.txt`.
+
+This is an independent project. It is not produced, approved or endorsed by Ofcom or any mobile operator.
+
+The code is MIT licensed. `LICENSE` sets out which files are covered by which licence.

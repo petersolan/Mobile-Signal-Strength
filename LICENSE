@@ -22,6 +22,29 @@ SOFTWARE.
 
 ---
 
-This licence covers the code only. Data in data/derived/ and docs/index.html is derived from:
-- Ofcom mobile signal strength measurement data, Open Government Licence v3.0
-- OpenStreetMap, (c) OpenStreetMap contributors, Open Database Licence (ODbL)
+The MIT licence above covers the code in this repository (scripts/, viz/*.py,
+viz/atlas.template.html). It does not cover the data or the third-party files
+below, which keep their own licences.
+
+1. Ofcom data (Open Government Licence v3.0)
+   data/derived/exeter_readings.parquet, data/derived/exeter_grid_100m.gpkg,
+   data/derived/exeter_grid_100m.json, the "cells" part of
+   data/derived/exeter_map.json, and the figures shown in docs/index.html.
+
+   Contains public sector information licensed under the Open Government
+   Licence v3.0: https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/
+   Sources: Ofcom, Mobile signal strength measurement data; Ofcom, Connected
+   Nations 2025. The data has been filtered to an Exeter bounding box,
+   cleaned, re-projected and aggregated to a 100 m grid. This project is not
+   produced, approved or endorsed by Ofcom.
+
+2. OpenStreetMap data (Open Database Licence v1.0)
+   The "basemap" part of data/derived/exeter_map.json, also embedded in
+   docs/index.html, is a derivative database of OpenStreetMap data and is
+   made available under the Open Database Licence:
+   https://opendatacommons.org/licenses/odbl/1-0/
+   (c) OpenStreetMap contributors, https://www.openstreetmap.org/copyright
+
+3. MapLibre GL JS (BSD-3-Clause)
+   viz/maplibre-gl-4.7.1.css, also embedded in docs/index.html, is part of
+   MapLibre GL JS. Its licence is reproduced in viz/MAPLIBRE-LICENSE.txt.
