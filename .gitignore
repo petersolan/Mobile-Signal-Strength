@@ -1,0 +1,17 @@
+# Raw and intermediate data (multi-GB, rebuilt by the pipeline)
+data/*
+!data/derived/
+data/derived/*
+!data/derived/exeter_grid_100m.json
+!data/derived/exeter_grid_100m.gpkg
+!data/derived/exeter_map.json
+!data/derived/exeter_readings.parquet
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.ipynb_checkpoints/
+
+# Old notes
+source.txt

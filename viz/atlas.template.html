@@ -1,0 +1,448 @@
+<title>Exeter Signal Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>__MAPLIBRE_CSS__</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js"></script>
+<style>
+/* Layout: instrument-panel page. Controls strip, then map + readout side by side, then coverage curve + table, then the Ofcom prediction for comparison. */
+:root {
+  --bg: #f4f6f8;
+  --surface: #fcfcfd;
+  --ink: #10151b;
+  --ink-2: #48515c;
+  --muted: #7d8590;
+  --line: #dde2e7;
+  --ghost: #e3e7eb;
+  --accent: #1c5cab;
+  --accent-wash: #e4eefa;
+  --s0: #c93b3a; --s1: #ee9897; --s2: #bdbcb6; --s3: #6da7ec; --s4: #1c5cab;
+  --op-3uk: #2a78d6; --op-ee: #eb6834; --op-o2: #1baf7a; --op-vf: #eda100;
+  --map-bg: #eceff2; --map-green: #dce8d8; --map-water: #bcd5ec; --map-road: #ffffff; --map-mway: #b4bdc7; --map-rail: #8e98a3; --map-ghost: #8e98a3;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1114; --surface: #161a1e; --ink: #eef1f4; --ink-2: #b5bdc6; --muted: #7c858f;
+    --line: #2a3037; --ghost: #23292f; --accent: #86b6ef; --accent-wash: #1a2a3d;
+    --s0: #e66767; --s1: #98403f; --s2: #5d5c57; --s3: #2f6fc0; --s4: #86b6ef;
+    --op-3uk: #3987e5; --op-ee: #d95926; --op-o2: #199e70; --op-vf: #c98500;
+    --map-bg: #111519; --map-green: #16221a; --map-water: #132a40; --map-road: #2b323a; --map-mway: #46505b; --map-rail: #56606b; --map-ghost: #6b7580;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1114; --surface: #161a1e; --ink: #eef1f4; --ink-2: #b5bdc6; --muted: #7c858f;
+  --line: #2a3037; --ghost: #23292f; --accent: #86b6ef; --accent-wash: #1a2a3d;
+  --s0: #e66767; --s1: #98403f; --s2: #5d5c57; --s3: #2f6fc0; --s4: #86b6ef;
+  --op-3uk: #3987e5; --op-ee: #d95926; --op-o2: #199e70; --op-vf: #c98500;
+  --map-bg: #111519; --map-green: #16221a; --map-water: #132a40; --map-road: #2b323a; --map-mway: #46505b; --map-rail: #56606b; --map-ghost: #6b7580;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; gap: 28px; }
+h1, h2 { font-family: var(--display); font-stretch: 112%; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; }
+h2 { font-size: 21px; line-height: 1.2; }
+p { margin: 0; max-width: 68ch; }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+header { display: grid; gap: 10px; }
+header p { color: var(--ink-2); }
+.num { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+
+.controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: end; padding-block: 14px; border-block: 1px solid var(--line); }
+.ctl { display: grid; gap: 6px; }
+.ctl > span { font-size: 12px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.04em; text-transform: uppercase; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button { font: 500 14px/1 var(--body); color: var(--ink-2); background: transparent; border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.seg button:hover:not(:disabled) { background: var(--accent-wash); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.seg button:disabled { opacity: 0.38; cursor: not-allowed; }
+.seg button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.ctl-note { font-size: 13px; color: var(--muted); max-width: 34ch; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: 28px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.mapbox { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
+.map { height: clamp(420px, 70vh, 700px); border-radius: 6px; overflow: hidden; background: var(--map-bg); }
+.map .maplibregl-ctrl-attrib { font: 11px/1.4 var(--body); }
+.map-fallback { display: grid; place-items: center; height: 100%; color: var(--ink-2); padding: 24px; text-align: center; }
+.lm { display: flex; align-items: center; gap: 6px; font: 600 12px/1 var(--body); color: var(--ink); pointer-events: none; }
+.lm i { width: 10px; height: 10px; border-radius: 50%; border: 2px solid var(--ink); background: var(--surface); flex: none; }
+.lm span { background: color-mix(in srgb, var(--surface) 85%, transparent); padding: 3px 5px; border-radius: 4px; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 13px; line-height: 1.4; padding: 8px 10px; border-radius: 6px; white-space: nowrap; z-index: 2; }
+.tip b { font-family: var(--mono); font-weight: 500; }
+.tip .gr { font-family: var(--mono); opacity: 0.75; font-size: 12px; }
+.mapfoot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); padding-top: 8px; }
+
+.readout { display: grid; gap: 22px; min-width: 0; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+.stat .v { font-family: var(--display); font-stretch: 112%; font-weight: 600; font-size: 30px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.stat .v small { font-size: 15px; font-weight: 600; color: var(--ink-2); margin-left: 2px; }
+.stat .k { font-size: 13px; color: var(--ink-2); }
+.legend { display: grid; gap: 8px; }
+.legend h3, .readout h3 { font: 600 12px/1.3 var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.lrow { display: grid; grid-template-columns: 14px minmax(0,1fr) 46px; gap: 10px; align-items: center; font-size: 13px; }
+.lrow .sw { width: 14px; height: 14px; border-radius: 3px; }
+.lrow .bar { height: 6px; border-radius: 3px; background: var(--ghost); overflow: hidden; margin-top: 4px; }
+.lrow .bar i { display: block; height: 100%; border-radius: 3px; }
+.lrow .pct { text-align: right; font-family: var(--mono); font-variant-numeric: tabular-nums; color: var(--ink-2); }
+.lrow .lab { color: var(--ink); }
+.lrow .lab em { font-style: normal; color: var(--muted); }
+
+.panel { display: grid; gap: 14px; }
+.panel > p { color: var(--ink-2); }
+.two { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 860px) { .two { grid-template-columns: minmax(0, 1fr); } }
+.chart { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 14px 10px 8px; min-width: 0; }
+.chart svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart .tip { white-space: normal; min-width: 150px; }
+.trow { display: grid; grid-template-columns: 10px 1fr auto; gap: 8px; align-items: center; }
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 12px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.03em; }
+td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td:first-child { font-family: var(--body); font-weight: 500; }
+td .opn { display: inline-flex; align-items: center; gap: 8px; }
+tr.sel td { background: var(--accent-wash); }
+
+.cn { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 860px) { .cn { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cn .stat { border-top: 2px solid var(--ink); padding-top: 10px; display: grid; gap: 4px; }
+.notes { display: grid; gap: 8px; font-size: 14px; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 18px; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 80ch; }
+.notes code { font-family: var(--mono); font-size: 13px; }
+@media (prefers-reduced-motion: no-preference) { .lrow .bar i { transition: width 180ms ease-out; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Ofcom drive-test scanner · 100 m OS National Grid · SX 85–99 / 84–99</div>
+    <h1>Exeter Signal Atlas</h1>
+    <p>Signal strength measured by Ofcom's Spectrum Assurance vans on Exeter's roads in 2022, 2023 and 2024. Each square is a 100&nbsp;m grid cell coloured by the median strongest-cell power (RSRP) across every van pass through it.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Map filters">
+    <div class="ctl"><span id="lab-tech">Network</span><div class="seg" id="seg-tech" aria-labelledby="lab-tech"></div></div>
+    <div class="ctl"><span id="lab-op">Operator</span><div class="seg" id="seg-op" aria-labelledby="lab-op"></div></div>
+    <div class="ctl"><span id="lab-year">Survey year</span><div class="seg" id="seg-year" aria-labelledby="lab-year"></div></div>
+    <div class="ctl"><span id="lab-view">View</span><div class="seg" id="seg-view" aria-labelledby="lab-view"></div></div>
+    <p class="ctl-note" id="op-note"></p>
+  </div>
+
+  <div class="main">
+    <div class="mapbox">
+      <div class="map" id="map" role="region" aria-label="Map of Exeter road cells coloured by signal strength"></div>
+      <div class="tip" id="maptip" hidden></div>
+      <div class="mapfoot"><span id="map-hint">Drag to pan, scroll to zoom · outlined squares were driven but have no reading for this selection</span><span id="mapcount" class="num"></span></div>
+    </div>
+    <aside class="readout">
+      <div class="stats" id="stats"></div>
+      <div class="legend"><h3 id="legend-h">Median RSRP per cell</h3><div id="legend"></div></div>
+    </aside>
+  </div>
+
+  <section class="panel">
+    <h2 id="curve-h">How much of the driven network clears each signal level</h2>
+    <p id="curve-p"></p>
+    <div class="two">
+      <div class="chart" id="curvebox"><div id="curve"></div><div class="tip" id="curvetip" hidden></div></div>
+      <div class="tbl-wrap"><table id="tbl"></table></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>What Ofcom's coverage prediction says for Exeter</h2>
+    <p>Operators' own predictions, published in Connected Nations 2025 (snapshot 1 July 2025) for Exeter local authority (E07000041): 62,918 premises over 4,709 grid squares of 100&nbsp;m. These are modelled, not measured, so they cover every building, not only the roads.</p>
+    <div class="cn">
+      <div class="stat"><div class="v">96.5<small>%</small></div><div class="k">of premises have indoor 4G from all four operators</div></div>
+      <div class="stat"><div class="v">99.3<small>%</small></div><div class="k">of Exeter's area has outdoor 4G from all four operators</div></div>
+      <div class="stat"><div class="v">3.0<small>%</small></div><div class="k">of premises have outdoor 5G from three or more operators (at −110 dBm)</div></div>
+      <div class="stat"><div class="v">99.3<small>%</small></div><div class="k">of premises have outdoor 5G Standalone from at least one operator</div></div>
+    </div>
+  </section>
+
+  <section class="notes">
+    <h2>Reading this data</h2>
+    <ul>
+      <li>Readings come from roof-mounted antennas on the vans with no correction for antenna gain. A phone inside a car or a building will see weaker signal.</li>
+      <li>The vans drive for other work, not coverage surveys, so only roads they used are covered: 8 hours in Oct–Nov 2022, about 1 hour in Sep 2023 and 3 hours in Jul 2024 (4G).</li>
+      <li>Thresholds follow Ofcom: 4G outdoor −105 dBm and indoor/in-car −95 dBm; 5G high confidence −110 dBm and very high confidence −100 dBm (SS-RSRP).</li>
+      <li>5G for O2 and Vodafone is missing: the scanner was not tuned to their 5G channels in the Exeter passes. That does not mean they have no 5G here.</li>
+      <li>Each cell value is a median of per-pass medians, so a van parked with the scanner running counts once. One such stop at SX 916 909 logged about 480,000 5G readings in 2022.</li>
+      <li>In 3D view, column height is the signal level above the weakest value on the chart axis, exaggerated 14 m per dB. Colour carries the same value, so the flat view loses nothing.</li>
+      <li>Basemap roads, rail, water and parks are from OpenStreetMap (© OpenStreetMap contributors, ODbL), bundled into the page.</li>
+      <li>The grid is also saved as <code>data/derived/exeter_grid_100m.gpkg</code> (EPSG:27700) for QGIS.</li>
+    </ul>
+  </section>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script id="geo" type="application/json">__GEO__</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const M = D.meta;
+  const OPS = { '3uk': 'Three', ee: 'EE', o2: 'O2', vf: 'Vodafone' };
+  const TECH = {
+    '4G': { ops: ['3uk', 'ee', 'o2', 'vf'], t: [-105, -95], tl: ['outdoor', 'indoor'], cuts: [-115, -105, -95, -85], dom: [-125, -60],
+            labels: ['Below −115', '−115 to −105', '−105 to −95', '−95 to −85', '−85 and above'],
+            notes: ['', 'below outdoor threshold', 'outdoor only', 'indoor and in-car', ''] },
+    '5G': { ops: ['3uk', 'ee'], t: [-110, -100], tl: ['high confidence', 'very high'], cuts: [-120, -110, -100, -90], dom: [-135, -65],
+            labels: ['Below −120', '−120 to −110', '−110 to −100', '−100 to −90', '−90 and above'],
+            notes: ['', 'below threshold', 'high confidence', 'very high confidence', ''] },
+  };
+  const YEARS = ['all', '2022', '2023', '2024'];
+  const S = { tech: '4G', op: 'ee', year: 'all', view: '3d' };
+  try { const s = JSON.parse(localStorage.getItem('esa-state') || 'null'); if (s && TECH[s.tech]) Object.assign(S, s); } catch (e) {}
+  if (!TECH[S.tech].ops.includes(S.op)) S.op = TECH[S.tech].ops[1];
+  if (S.view !== '2d' && S.view !== '3d') S.view = '3d';
+
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const layer = (tech, op, yr) => {
+    const a = D.layers[`${tech}|${op}|${yr}`] || [];
+    const out = [];
+    for (let i = 0; i < a.length; i += 5) out.push({ x: a[i], y: a[i + 1], r: a[i + 2] / 10, p: a[i + 3], n: a[i + 4] });
+    return out;
+  };
+  const readings = (tech, op, yr) => yr === 'all'
+    ? ['2022', '2023', '2024'].reduce((s, y) => s + (M.readings[`${tech}|${op}|${y}`] || 0), 0)
+    : (M.readings[`${tech}|${op}|${yr}`] || 0);
+  const bucket = (r, cuts) => { let b = 0; while (b < cuts.length && r >= cuts[b]) b++; return b; };
+  const median = v => { if (!v.length) return NaN; const s = [...v].sort((a, b) => a - b), m = s.length >> 1; return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2; };
+  const fmt = (v, d = 0) => Number.isFinite(v) ? v.toLocaleString('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d }) : '–';
+  const dbm = v => Number.isFinite(v) ? (v < 0 ? '−' : '') + fmt(Math.abs(v), 1) : '–';
+  const gridRef = (cx, cy) => {
+    const e = (cx + M.cx0) * 100 + 50, n = (cy + M.cy0) * 100 + 50;
+    return `SX ${String(Math.floor((e % 100000) / 100)).padStart(3, '0')} ${String(Math.floor((n % 100000) / 100)).padStart(3, '0')}`;
+  };
+
+  // Controls
+  function seg(id, items, key) {
+    const el = document.getElementById(id); el.innerHTML = '';
+    for (const it of items) {
+      const b = document.createElement('button'); b.type = 'button'; b.id = `${id}-${it.v}`;
+      if (it.dot) { const d = document.createElement('span'); d.className = 'dot'; d.style.background = `var(--op-${it.v})`; b.append(d); }
+      b.append(it.l);
+      b.setAttribute('aria-pressed', String(S[key] === it.v));
+      b.disabled = !!it.off; if (it.off) b.title = it.off;
+      b.onclick = () => { S[key] = it.v; if (key === 'tech' && !TECH[S.tech].ops.includes(S.op)) S.op = 'ee'; render(); };
+      el.append(b);
+    }
+  }
+  function controls() {
+    seg('seg-tech', [{ v: '4G', l: '4G LTE' }, { v: '5G', l: '5G NR' }], 'tech');
+    seg('seg-op', Object.entries(OPS).map(([v, l]) => ({ v, l, dot: true, off: TECH[S.tech].ops.includes(v) ? '' : 'No 5G readings for this operator in Exeter' })), 'op');
+    seg('seg-year', YEARS.map(v => ({ v, l: v === 'all' ? 'All years' : v })), 'year');
+    seg('seg-view', [{ v: '2d', l: 'Flat' }, { v: '3d', l: '3D columns' }], 'view');
+    document.getElementById('op-note').textContent = S.tech === '5G' ? 'O2 and Vodafone 5G were not scanned on the Exeter passes.' : '';
+  }
+
+  const LANDMARKS = [
+    { name: 'Cathedral', lon: -3.5297, lat: 50.7226 },
+    { name: 'St Davids station', lon: -3.5435, lat: 50.7293 },
+    { name: 'M5 J29', lon: -3.4700, lat: 50.7246 },
+  ];
+  const gridRefAbs = (cx, cy) => gridRef(cx - M.cx0, cy - M.cy0);
+
+  // Map (MapLibre GL, all layers bundled in the page: OSM basemap + 100 m cells)
+  const G = JSON.parse(document.getElementById('geo').textContent);
+  const tip = document.getElementById('maptip'), mapEl = document.getElementById('map');
+  let map = null, mapReady = false;
+  const key = () => `r_${S.tech}_${S.op}_${S.year}`;
+  const colorExpr = () => {
+    const T = TECH[S.tech];
+    return ['step', ['get', key()], css('--s0'), T.cuts[0], css('--s1'), T.cuts[1], css('--s2'), T.cuts[2], css('--s3'), T.cuts[3], css('--s4')];
+  };
+  // Column height: metres above the weakest level on the axis, exaggerated so a 10 dB step reads clearly
+  const heightExpr = () => ['*', ['max', 0, ['-', ['get', key()], TECH[S.tech].dom[0]]], 14];
+  const zw = (a, b) => ['interpolate', ['exponential', 1.6], ['zoom'], 11, a, 17, b];
+
+  function mapStyle() {
+    const sources = {};
+    for (const k in G.basemap) sources[k] = { type: 'geojson', data: G.basemap[k] };
+    sources.cells = { type: 'geojson', data: G.cells };
+    const has = ['has', key()], is3d = S.view === '3d';
+    return {
+      version: 8, sources,
+      layers: [
+        { id: 'bg', type: 'background', paint: { 'background-color': css('--map-bg') } },
+        { id: 'green', type: 'fill', source: 'green', paint: { 'fill-color': css('--map-green') } },
+        { id: 'water', type: 'fill', source: 'water', paint: { 'fill-color': css('--map-water') } },
+        { id: 'river', type: 'line', source: 'river', paint: { 'line-color': css('--map-water'), 'line-width': zw(1.2, 8) } },
+        { id: 'minor', type: 'line', source: 'minor', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': css('--map-road'), 'line-width': zw(0.5, 6) } },
+        { id: 'mid', type: 'line', source: 'mid', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': css('--map-road'), 'line-width': zw(1, 9) } },
+        { id: 'major', type: 'line', source: 'major', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': css('--map-road'), 'line-width': zw(1.6, 12) } },
+        { id: 'motorway', type: 'line', source: 'motorway', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': css('--map-mway'), 'line-width': zw(2, 14) } },
+        { id: 'rail', type: 'line', source: 'rail', paint: { 'line-color': css('--map-rail'), 'line-width': zw(1, 3), 'line-dasharray': [3, 2] } },
+        { id: 'ghost', type: 'line', source: 'cells', filter: ['!', has], paint: { 'line-color': css('--map-ghost'), 'line-width': 0.8, 'line-opacity': 0.7 } },
+        { id: 'flat', type: 'fill', source: 'cells', filter: has, layout: { visibility: is3d ? 'none' : 'visible' },
+          paint: { 'fill-color': colorExpr(), 'fill-opacity': 0.88, 'fill-outline-color': css('--map-bg') } },
+        { id: 'cols', type: 'fill-extrusion', source: 'cells', filter: has, layout: { visibility: is3d ? 'visible' : 'none' },
+          paint: { 'fill-extrusion-color': colorExpr(), 'fill-extrusion-height': heightExpr(), 'fill-extrusion-opacity': 0.9 } },
+      ],
+    };
+  }
+
+  function initMap() {
+    if (!window.maplibregl) {
+      mapEl.innerHTML = '<div class="map-fallback">The map library did not load. Check your connection and reload the page; the charts below still work.</div>';
+      return;
+    }
+    let w = 180, s = 90, e = -180, n = -90;
+    for (const f of G.cells.features) for (const [x, y] of f.geometry.coordinates[0]) { w = Math.min(w, x); e = Math.max(e, x); s = Math.min(s, y); n = Math.max(n, y); }
+    map = new maplibregl.Map({
+      container: mapEl, style: mapStyle(), bounds: [[w, s], [e, n]], fitBoundsOptions: { padding: 24 },
+      maxBounds: [[w - 0.06, s - 0.04], [e + 0.06, n + 0.04]], attributionControl: false,
+      pitch: S.view === '3d' ? 55 : 0, bearing: S.view === '3d' ? -18 : 0, maxPitch: 70, dragRotate: true,
+    });
+    map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), 'top-right');
+    map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+    map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'Basemap © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · Signal data Ofcom, OGL v3' }), 'bottom-right');
+    for (const L of LANDMARKS) {
+      const el = document.createElement('div'); el.className = 'lm'; el.innerHTML = `<i></i><span>${L.name}</span>`;
+      new maplibregl.Marker({ element: el, anchor: 'left', offset: [-5, 0] }).setLngLat([L.lon, L.lat]).addTo(map);
+    }
+    map.on('load', () => { mapReady = true; });
+    map.on('mousemove', ev => {
+      const f = map.queryRenderedFeatures(ev.point, { layers: [S.view === '3d' ? 'cols' : 'flat'] })[0];
+      map.getCanvas().style.cursor = f ? 'pointer' : '';
+      if (!f) { tip.hidden = true; return; }
+      const T = TECH[S.tech], p = f.properties, r = p[key()], np = p[key().replace('r_', 'p_')];
+      tip.innerHTML = `<div class="gr">${gridRefAbs(p.cx, p.cy)}</div><b>${dbm(r)} dBm</b> ${OPS[S.op]} ${S.tech}<br>${np} pass${np > 1 ? 'es' : ''}${S.year === 'all' ? ' across all years' : ' in ' + S.year}<br>${r >= T.t[1] ? 'Clears ' + T.tl[1] : r >= T.t[0] ? 'Clears ' + T.tl[0] + ' only' : 'Below ' + T.tl[0] + ' threshold'}`;
+      tip.hidden = false;
+      const ox = mapEl.offsetLeft, oy = mapEl.offsetTop, bw = mapEl.clientWidth, bh = mapEl.clientHeight;
+      let tx = ev.point.x + 14, ty = ev.point.y + 14;
+      if (tx + tip.offsetWidth > bw - 6) tx = ev.point.x - tip.offsetWidth - 14;
+      if (ty + tip.offsetHeight > bh - 6) ty = ev.point.y - tip.offsetHeight - 14;
+      tip.style.left = ox + tx + 'px'; tip.style.top = oy + ty + 'px';
+    });
+    map.on('mouseout', () => { tip.hidden = true; });
+  }
+
+  let lastView = S.view;
+  function updateMap(restyle) {
+    if (!map) return;
+    if (restyle || !mapReady) { map.setStyle(mapStyle(), { diff: true }); }
+    else {
+      const has = ['has', key()];
+      map.setFilter('ghost', ['!', has]); map.setFilter('flat', has); map.setFilter('cols', has);
+      map.setPaintProperty('flat', 'fill-color', colorExpr());
+      map.setPaintProperty('cols', 'fill-extrusion-color', colorExpr());
+      map.setPaintProperty('cols', 'fill-extrusion-height', heightExpr());
+      map.setLayoutProperty('flat', 'visibility', S.view === '3d' ? 'none' : 'visible');
+      map.setLayoutProperty('cols', 'visibility', S.view === '3d' ? 'visible' : 'none');
+    }
+    if (S.view !== lastView) {
+      lastView = S.view;
+      map.easeTo({ pitch: S.view === '3d' ? 55 : 0, bearing: S.view === '3d' ? -18 : 0, duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 900 });
+    }
+    document.getElementById('map-hint').textContent = S.view === '3d'
+      ? 'Column height and colour both show signal level · right-drag or Ctrl-drag to rotate and tilt'
+      : 'Drag to pan, scroll to zoom · outlined squares were driven but have no reading for this selection';
+  }
+
+  // Readout
+  function readout(cells) {
+    const T = TECH[S.tech], rs = cells.map(c => c.r), n = rs.length;
+    const pct = t => n ? 100 * rs.filter(r => r >= t).length / n : NaN;
+    document.getElementById('stats').innerHTML = [
+      [dbm(median(rs)), 'dBm', 'median cell RSRP'],
+      [fmt(n), '', 'grid cells with readings'],
+      [fmt(pct(T.t[0]), 1), '%', `of cells at ${T.t[0].toString().replace('-', '−')} dBm or better (${T.tl[0]})`],
+      [fmt(pct(T.t[1]), 1), '%', `of cells at ${T.t[1].toString().replace('-', '−')} dBm or better (${T.tl[1]})`],
+    ].map(([v, u, k]) => `<div class="stat"><div class="v">${v}<small>${u}</small></div><div class="k">${k}</div></div>`).join('');
+    const counts = [0, 0, 0, 0, 0]; for (const r of rs) counts[bucket(r, T.cuts)]++;
+    document.getElementById('legend-h').textContent = `Median ${S.tech === '5G' ? 'SS-RSRP' : 'RSRP'} per cell, dBm`;
+    document.getElementById('legend').innerHTML = [4, 3, 2, 1, 0].map(i => {
+      const p = n ? 100 * counts[i] / n : 0;
+      return `<div class="lrow"><span class="sw" style="background:var(--s${i})"></span><div><div class="lab">${T.labels[i]}${T.notes[i] ? ` <em>· ${T.notes[i]}</em>` : ''}</div><div class="bar"><i style="width:${p}%;background:var(--s${i})"></i></div></div><span class="pct">${fmt(p, 0)}%</span></div>`;
+    }).join('');
+    document.getElementById('mapcount').textContent = `${fmt(n)} cells · ${fmt(readings(S.tech, S.op, S.year))} readings`;
+  }
+
+  // Coverage curve: share of cells with median RSRP >= x
+  const NS = 'http://www.w3.org/2000/svg';
+  const curveTip = document.getElementById('curvetip');
+  function curve() {
+    const T = TECH[S.tech], box = document.getElementById('curve');
+    const W = Math.max(300, box.clientWidth), H = Math.round(Math.min(340, Math.max(240, W * 0.52)));
+    const m = { l: 44, r: 78, t: 12, b: 36 }, iw = W - m.l - m.r, ih = H - m.t - m.b;
+    const [x0, x1] = T.dom, X = v => m.l + (v - x0) / (x1 - x0) * iw, Y = v => m.t + (1 - v / 100) * ih;
+    const series = T.ops.map(op => {
+      const rs = layer(S.tech, op, S.year).map(c => c.r).sort((a, b) => a - b), n = rs.length;
+      const pts = []; let i = 0;
+      for (let x = x0; x <= x1; x++) { while (i < n && rs[i] < x) i++; pts.push([x, n ? 100 * (n - i) / n : NaN]); }
+      return { op, n, pts };
+    }).filter(s => s.n);
+    const ink2 = 'var(--ink-2)', muted = 'var(--muted)';
+    let h = `<svg viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Share of cells at or above each signal level, by operator">`;
+    for (const v of [0, 25, 50, 75, 100]) h += `<line x1="${m.l}" x2="${m.l + iw}" y1="${Y(v)}" y2="${Y(v)}" stroke="var(--line)" stroke-width="1"/><text x="${m.l - 8}" y="${Y(v) + 4}" text-anchor="end" font-size="11" fill="${muted}" font-family="var(--mono)">${v}%</text>`;
+    for (let v = Math.ceil(x0 / 10) * 10; v <= x1; v += 10) h += `<text x="${X(v)}" y="${m.t + ih + 18}" text-anchor="middle" font-size="11" fill="${muted}" font-family="var(--mono)">${String(v).replace('-', '−')}</text>`;
+    h += `<text x="${m.l + iw}" y="${H - 3}" text-anchor="end" font-size="11" fill="${muted}">signal level, dBm (stronger →)</text>`;
+    T.t.forEach((t, i) => { h += `<line x1="${X(t)}" x2="${X(t)}" y1="${m.t}" y2="${m.t + ih}" stroke="var(--ink-2)" stroke-dasharray="3 3" stroke-width="1"/><text x="${X(t) + 4}" y="${m.t + 11}" font-size="11" fill="${ink2}">${T.tl[i]}</text>`; });
+    // labels: avoid collisions at right edge
+    const ends = series.map(s => { const last = s.pts.find(p => p[0] === T.t[0]); return { s, y: Y(last[1]) }; }).sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 14) ends[i].y = ends[i - 1].y + 14;
+    for (const s of series) {
+      const sel = s.op === S.op;
+      const d = s.pts.map((p, i) => `${i ? 'L' : 'M'}${X(p[0]).toFixed(1)},${Y(p[1]).toFixed(1)}`).join('');
+      h += `<path d="${d}" fill="none" stroke="var(--op-${s.op})" stroke-width="${sel ? 3 : 2}" stroke-linejoin="round" stroke-linecap="round" opacity="${sel ? 1 : 0.85}"/>`;
+    }
+    h += `<text x="${m.l + iw + 8}" y="${m.t + 11}" font-size="11" fill="${muted}">at ${String(T.t[0]).replace('-', '−')}</text>`;
+    for (const e of ends) {
+      const yv = e.s.pts.find(p => p[0] === T.t[0])[1];
+      h += `<circle cx="${X(T.t[0])}" cy="${Y(yv)}" r="4" fill="var(--op-${e.s.op})" stroke="var(--surface)" stroke-width="2"/>`;
+      h += `<text x="${m.l + iw + 8}" y="${e.y + 4}" font-size="12" fill="var(--ink)" font-weight="${e.s.op === S.op ? 600 : 400}">${OPS[e.s.op]} ${fmt(yv, 0)}%</text>`;
+    }
+    h += `<line id="xh" x1="0" x2="0" y1="${m.t}" y2="${m.t + ih}" stroke="var(--ink)" stroke-width="1" opacity="0"/>`;
+    h += `<rect x="${m.l}" y="${m.t}" width="${iw}" height="${ih}" fill="transparent" id="hit"/></svg>`;
+    box.innerHTML = h;
+    const svg = box.querySelector('svg'), xh = svg.querySelector('#xh');
+    svg.querySelector('#hit').addEventListener('pointermove', ev => {
+      const r = svg.getBoundingClientRect(), sx = (ev.clientX - r.left) * W / r.width;
+      const v = Math.round(x0 + (sx - m.l) / iw * (x1 - x0));
+      xh.setAttribute('x1', X(v)); xh.setAttribute('x2', X(v)); xh.setAttribute('opacity', 0.5);
+      curveTip.innerHTML = `<div class="gr">${String(v).replace('-', '−')} dBm or better</div>` + series.map(s => {
+        const p = s.pts.find(q => q[0] === v); return `<div class="trow"><span class="dot" style="background:var(--op-${s.op})"></span><span>${OPS[s.op]}</span><b>${fmt(p[1], 1)}%</b></div>`;
+      }).join('');
+      curveTip.hidden = false;
+      const bx = document.getElementById('curvebox').getBoundingClientRect();
+      let tx = ev.clientX - bx.left + 14; if (tx + curveTip.offsetWidth > bx.width - 6) tx = ev.clientX - bx.left - curveTip.offsetWidth - 14;
+      curveTip.style.left = tx + 'px'; curveTip.style.top = '14px';
+    });
+    svg.querySelector('#hit').addEventListener('pointerleave', () => { curveTip.hidden = true; xh.setAttribute('opacity', 0); });
+    document.getElementById('curve-p').textContent = `Each line shows the share of ${S.tech} grid cells (${S.year === 'all' ? 'all survey years' : S.year}) whose median signal is at or above the level on the horizontal axis. Further right and higher means stronger coverage. Dashed lines mark Ofcom's ${S.tech} thresholds.`;
+
+    // Table
+    const t = T.t.map(v => String(v).replace('-', '−'));
+    let tb = `<thead><tr><th>Operator</th><th>Cells</th><th>Median dBm</th><th>≥ ${t[0]}</th><th>≥ ${t[1]}</th><th>Readings</th></tr></thead><tbody>`;
+    for (const op of Object.keys(OPS)) {
+      const rs = layer(S.tech, op, S.year).map(c => c.r), n = rs.length;
+      const pc = th => n ? fmt(100 * rs.filter(r => r >= th).length / n, 1) + '%' : '–';
+      tb += `<tr class="${op === S.op ? 'sel' : ''}"><td><span class="opn"><span class="dot" style="background:var(--op-${op})"></span>${OPS[op]}</span></td><td>${n ? fmt(n) : '–'}</td><td>${dbm(median(rs))}</td><td>${pc(T.t[0])}</td><td>${pc(T.t[1])}</td><td>${n ? fmt(readings(S.tech, op, S.year)) : 'not scanned'}</td></tr>`;
+    }
+    document.getElementById('tbl').innerHTML = tb + '</tbody>';
+  }
+
+  function render() {
+    try { localStorage.setItem('esa-state', JSON.stringify(S)); } catch (e) {}
+    controls();
+    const cells = layer(S.tech, S.op, S.year);
+    updateMap(false); readout(cells); curve();
+  }
+  const retheme = () => { updateMap(true); render(); };
+  let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(curve, 120); });
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', retheme);
+  new MutationObserver(retheme).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(curve);
+  initMap();
+  render();
+})();
+</script>
