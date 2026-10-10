@@ -2,7 +2,11 @@
 
 Measured 4G and 5G signal strength on Exeter's roads, built from Ofcom's open drive-test data and shown as an interactive 3D map.
 
-**Live map:** https://petersolan.github.io/Mobile-Signal-Strength/
+**[Live map](https://petersolan.github.io/Mobile-Signal-Strength/)**: switch network, operator and year, flat or in 3D.
+
+![Exeter Signal Atlas: EE 4G median RSRP per 100 m square as 3D columns along Exeter's roads](docs/images/signal_atlas.png)
+
+*EE 4G, all survey years: each column is a 100 m square, its height and colour the median signal. Contains Ofcom data (OGL v3). Basemap © OpenStreetMap contributors.*
 
 The map shows readings from Ofcom's Spectrum Assurance vans, taken during their regular work, for Three, EE, O2 and Vodafone in 2022, 2023 and 2024. Readings are binned to 100 m squares on the Ordnance Survey grid. You can switch between 4G and 5G, operator and survey year, view the squares flat or as 3D columns, and compare each operator against Ofcom's coverage thresholds.
 
