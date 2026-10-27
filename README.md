@@ -37,17 +37,17 @@ All survey years combined. Each square's value is its median RSRP (SS-RSRP for 5
 
 ## Coverage checker (modelled)
 
-**[Coverage checker](https://petersolan.github.io/Mobile-Signal-Strength/coverage.html)**: the drive tests only measure roads. The checker models 4G and 5G coverage everywhere in between, with hills from LiDAR, and counts how many residents get indoor 4G or good 5G, from which operator, in any area: a local authority, a neighbourhood (MSOA), or one you draw. It shows coverage classes or the signal in dBm, the table downloads as CSV, and the page prints as a report.
+**[Coverage checker](https://petersolan.github.io/Mobile-Signal-Strength/coverage.html)**: the drive tests only measure roads. The checker models 4G and 5G coverage everywhere in between, with hills from LiDAR, and counts how many residents get indoor 4G or good 5G, from which operator, in any area: a local authority, a neighbourhood (MSOA), or one you draw. It shows coverage classes or the signal in dBm, the table downloads as CSV, and the page prints as a report. It covers EE, VMO2 (Virgin Media O2) and Vodafone: Three is now part of VodafoneThree, so it is left out of the checker, though its readings still feed the calibration and stay in the Signal Atlas.
 
-![Coverage checker: modelled 5G signal of Three at 3.6 GHz across Exeter](docs/images/coverage_checker.jpg)
+![Coverage checker: modelled 4G across Exeter, coloured by how many operators give indoor coverage](docs/images/coverage_checker.jpg)
 
-*Three's modelled 5G at 3.6 GHz: islands around the masts, holes behind hills and between sites. Exeter local authority selected; the readout counts its residents.*
+*Modelled 4G across Exeter, coloured by how many of the three operators give indoor coverage; the tooltip shows each operator's modelled signal at that point, and the readout counts Exeter's residents.*
 
 How it works:
 
 1. **Cells and masts from the drive tests.** Every 4G reading lists each operator's four strongest cells (PCI and EARFCN) with their RSRP: 740 cells across the four networks. For each cell seen often and strongly enough (531), a path-loss curve `RSRP = A − 10·n·log10(d)` is fitted to its readings, binned to 20 m squares, with a robust (soft L1) least-squares fit and the slope n held to the urban macro range 2.8–4.5. This estimates where its mast is and how strong it is. Positions from road readings are approximate, typically a few hundred metres off: OpenStreetMap maps only 34 masts in the area, too few to check them against.
 2. **Hills and buildings.** Environment Agency 1 m LiDAR, averaged to 5 m. From each mast, rays every 0.5° sample the terrain every 20 m; a point below the horizon loses signal by knife-edge diffraction (ITU-R P.526) at the cell's own frequency, so 3.6 GHz drops behind a hill that 800 MHz gets over. Buildings and trees enter as clutter, the mean height of everything within about 150 m, with a loss per metre fitted to the drive tests for each operator. Each cell's power is refitted with the diffraction loss included.
-3. **5G.** Most 5G readings are not tied to a cell (the PCI is on other rows), so 5G is modelled the way it is rolled out: a 5G cell on each of the operator's estimated masts at its 5G frequency (EE mostly 700 MHz, Three 3.6 GHz, from the NR-ARFCNs), calibrated to the measured strongest-cell SS-RSRP. O2 and Vodafone 5G was not scanned in Exeter, so theirs is **synthetic**: 3.5 GHz on all their estimated masts with Three's calibration, labelled as such everywhere.
+3. **5G.** Most 5G readings are not tied to a cell (the PCI is on other rows), so 5G is modelled the way it is rolled out: a 5G cell on each of the operator's estimated masts at its 5G frequency (EE mostly 700 MHz, from the NR-ARFCNs), calibrated to the measured strongest-cell SS-RSRP. VMO2 and Vodafone 5G was not scanned in Exeter, so theirs is **synthetic**: 3.5 GHz on all their estimated masts, calibrated to the 3.6 GHz 5G measured on Three's network, and labelled as synthetic everywhere.
 4. **Coverage grid.** On a 25 m OS grid, an operator's coverage is its strongest modelled cell, shifted by the operator's median difference from the measurements. Near the roads, the remaining measured − modelled difference is spread over about 150 m, so the grid matches the drive tests there. Away from them, a smooth random field (shadow fading: ±4 dB for 4G, ±6 dB for 5G, about 50 m across, 60% shared between operators because the same trees and buildings get in everyone's way) stands in for what the LiDAR cannot explain. It is one fixed draw, not a measurement.
 5. **Residents.** Census 2021 residents per address (UPRN), from the [Census-distribution](https://github.com/petersolan/GB-Census-Population-Map) project: 152,419 residents at 72,647 addresses, 130,712 of them in Exeter. Each address takes the modelled RSRP of its 25 m square and is classed with Ofcom's thresholds: 4G indoor at −95 dBm or more and outdoor from −105 dBm; 5G very high confidence at −100 dBm and high from −110 dBm.
 
@@ -55,11 +55,9 @@ How it works:
 
 | Network | Operator | Bias, dB | RMSE, dB | Same coverage class |
 |---|---|---|---|---|
-| 4G | Three | +4.9 | 10.9 | 77% |
 | 4G | EE | +6.3 | 14.8 | 87% |
-| 4G | O2 | +4.8 | 13.6 | 79% |
+| 4G | VMO2 | +4.8 | 13.6 | 79% |
 | 4G | Vodafone | +3.9 | 12.8 | 81% |
-| 5G | Three | +4.3 | 11.5 | 62% |
 | 5G | EE | +0.1 | 12.1 | 64% |
 
 With the road correction; the model alone is 16–20 dB RMSE. Tuned propagation models typically reach 8–10 dB. The positive bias means the model is a few dB optimistic in areas it has not seen. Letting the slope run free fits the roads slightly better (8.5–14.3 dB) but with free-space curves that throw kilometre-wide hotspots, so the slope is held to the urban range.
@@ -70,12 +68,11 @@ With the road correction; the model alone is 16–20 dB RMSE. Tuned propagation 
 |---|---|---|---|---|---|
 | EE | 96.6% | 3.3% | 85.0% | 13.5% | 1.5% |
 | Vodafone | 98.1% | 1.8% | 25.1%* | 34.8%* | 40.1%* |
-| O2 | 94.1% | 5.2% | 32.6%* | 26.0%* | 41.4%* |
-| Three | 93.5% | 5.8% | 55.6% | 25.7% | 18.7% |
+| VMO2 | 94.1% | 5.2% | 32.6%* | 26.0%* | 41.4%* |
 
 \* synthetic 5G.
 
-87.9% of residents have indoor 4G from all four operators. Ofcom's Connected Nations 2025, from the operators' own predictions, gives 96.5% of premises, so this model is the more cautious of the two: mast positions are estimates, there are no antenna patterns, the drive tests are from 2022–2024, and the scanner's roof antenna gain is not corrected. Both agree that practically every home has indoor 4G from at least one operator (99.9% here, 100% in Ofcom's figures). Use the checker as an estimate from open data, not as an operator's coverage map.
+90.8% of residents have indoor 4G from all three operators. Ofcom's Connected Nations 2025, from the operators' own predictions, gives 99.9% of premises with indoor 4G from at least three of its four operators, so this model is the more cautious of the two: mast positions are estimates, there are no antenna patterns, the drive tests are from 2022–2024, and the scanner's roof antenna gain is not corrected. Both agree that practically every home has indoor 4G from at least one operator (99.9% here, 100% in Ofcom's figures). Use the checker as an estimate from open data, not as an operator's coverage map.
 
 ## Repository layout
 

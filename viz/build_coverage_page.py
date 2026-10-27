@@ -2,8 +2,8 @@
 the OSM basemap and the coverage model outputs of scripts/build_coverage.py.
 
 Data in the page, for each network (4G, 5G):
-  grids      modelled class per 25 m pixel for all four operators in one byte, on a Web Mercator grid:
-             code = 27 * Three + 9 * EE + 3 * O2 + Vodafone, each 0 none, 1 middle, 2 top class
+  grids      modelled class per 25 m pixel for the three operators in one byte, on a Web Mercator grid:
+             code = 9 * EE + 3 * VMO2 + Vodafone, each 0 none, 1 middle, 2 top class
              (4G: outdoor only / indoor; 5G: high / very high confidence); 255 outside
   addresses  residents per 25 m model cell and neighbourhood (not per address): cell centre lon/lat in
              1e-5 degrees (lon delta-coded after sorting), residents, addresses, MSOA and local authority
@@ -28,7 +28,7 @@ from rasterio.warp import Resampling, calculate_default_transform, reproject
 
 here = Path(__file__).resolve().parent
 derived = here.parent / "data" / "derived"
-OPS = ["3uk", "ee", "o2", "vf"]
+OPS = ["ee", "o2", "vf"]   # operators on the page: EE, VMO2 and Vodafone (Three is now part of VodafoneThree)
 GRID_M = 25    # the model grid (scripts/build_coverage.py)
 THRESHOLDS = {"4g": (-105, -95), "5g": (-110, -100)}   # Ofcom: 4G outdoor / indoor, 5G high / very high
 LADS = {"E07000041": "Exeter", "E07000040": "East Devon", "E07000045": "Teignbridge", "E07000042": "Mid Devon"}
@@ -55,7 +55,7 @@ def grid_layer(tech):
             out = np.full((meta[2], meta[1]), -999, np.float32)
             reproject(src.read(1).astype(np.float32), out, src_transform=src.transform, src_crs=src.crs,
                       dst_transform=meta[0], dst_crs="EPSG:3857", dst_nodata=-999, resampling=Resampling.nearest)
-            codes += classes(out, tech).astype(np.int32) * 3 ** (3 - i)
+            codes += classes(out, tech).astype(np.int32) * 3 ** (len(OPS) - 1 - i)
             # the signal itself, for the dBm view: 1 = -140 dBm ... 101 = -40 dBm, 0 = outside
             dbm = np.where(valid > 0, np.clip(np.round(out) + 141, 1, 101), 0).astype(np.uint8)
             buf = io.BytesIO()
@@ -76,12 +76,13 @@ def address_layer():
     a = pd.read_parquet(derived / "coverage_addresses.parquet")
     a["cx"], a["cy"] = (a.x // GRID_M).astype(int), (a.y // GRID_M).astype(int)
     rsrp = [f"rsrp_{tech}_{op}" for tech in THRESHOLDS for op in OPS]
-    a = (a.groupby(["cx", "cy", "msoa21cd", "msoa_name", "lad26cd"], as_index=False)
-          .agg(population=("population", "sum"), addresses=("uprn", "size"), **{c: (c, "first") for c in rsrp}))
+    # grouped by the modelled values too: an address on a cell edge took the neighbouring cell's value
+    a = (a.groupby(["cx", "cy", "msoa21cd", "msoa_name", "lad26cd", *rsrp], as_index=False)
+          .agg(population=("population", "sum"), addresses=("uprn", "size")))
     x, y = (a.cx + 0.5) * GRID_M, (a.cy + 0.5) * GRID_M
     lon, lat = Transformer.from_crs(27700, 4326, always_xy=True).transform(x.values, y.values)
     a = a.assign(lon=np.round(lon * 1e5).astype(int), lat=np.round(lat * 1e5).astype(int)).sort_values(["lon", "lat"])
-    code = {tech: sum(classes(a[f"rsrp_{tech}_{op}"].values, tech).astype(int) * 3 ** (3 - i)
+    code = {tech: sum(classes(a[f"rsrp_{tech}_{op}"].values, tech).astype(int) * 3 ** (len(OPS) - 1 - i)
                       for i, op in enumerate(OPS)).tolist() for tech in THRESHOLDS}
     msoas = (a[["msoa21cd", "msoa_name", "lad26cd"]].drop_duplicates("msoa21cd")
                .sort_values("msoa_name").reset_index(drop=True))
@@ -107,9 +108,7 @@ def cells_layer():
 def main():
     val = pd.read_csv(derived / "coverage_validation.csv")
     data = dict(grids={t: grid_layer(t) for t in THRESHOLDS}, addresses=address_layer(), cells=cells_layer(),
-                validation=val.to_dict(orient="records"),
-                summary=[{k: v for k, v in r.items() if pd.notna(v)}   # 4G and 5G rows have different columns
-                         for r in pd.read_csv(derived / "coverage_summary.csv").to_dict(orient="records")])
+                validation=val[val.operator.isin(["EE", "O2", "Vodafone"])].to_dict(orient="records"))
     basemap = json.loads((derived / "exeter_map.json").read_text(encoding="utf-8"))["basemap"]
     page = (here / "coverage.template.html").read_text(encoding="utf-8")
     page = page.replace("__MAPLIBRE_CSS__", (here / "maplibre-gl-4.7.1.css").read_text(encoding="utf-8"))

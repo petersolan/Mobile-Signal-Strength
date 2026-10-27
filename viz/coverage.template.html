@@ -10,7 +10,7 @@
   --bg: #f4f6f8; --surface: #fcfcfd; --ink: #10151b; --ink-2: #48515c; --muted: #7d8590;
   --line: #dde2e7; --ghost: #e3e7eb; --accent: #1c5cab; --accent-wash: #e4eefa;
   --s0: #c93b3a; --s1: #ee9897; --s2: #bdbcb6; --s3: #6da7ec; --s4: #1c5cab;
-  --op-3uk: #2a78d6; --op-ee: #eb6834; --op-o2: #1baf7a; --op-vf: #eda100;
+  --op-ee: #0f9d58; --op-o2: #1a56db; --op-vf: #e60000;
   --map-bg: #eceff2; --map-green: #dce8d8; --map-water: #bcd5ec; --map-road: #ffffff; --map-mway: #b4bdc7; --map-rail: #8e98a3;
   --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
   --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -21,7 +21,7 @@
     --bg: #0e1114; --surface: #161a1e; --ink: #eef1f4; --ink-2: #b5bdc6; --muted: #7c858f;
     --line: #2a3037; --ghost: #23292f; --accent: #86b6ef; --accent-wash: #1a2a3d;
     --s0: #e66767; --s1: #98403f; --s2: #5d5c57; --s3: #2f6fc0; --s4: #86b6ef;
-    --op-3uk: #3987e5; --op-ee: #d95926; --op-o2: #199e70; --op-vf: #c98500;
+    --op-ee: #2fbf71; --op-o2: #5b8cff; --op-vf: #ff4545;
     --map-bg: #111519; --map-green: #16221a; --map-water: #132a40; --map-road: #2b323a; --map-mway: #46505b; --map-rail: #56606b;
     color-scheme: dark;
   }
@@ -30,7 +30,7 @@
   --bg: #0e1114; --surface: #161a1e; --ink: #eef1f4; --ink-2: #b5bdc6; --muted: #7c858f;
   --line: #2a3037; --ghost: #23292f; --accent: #86b6ef; --accent-wash: #1a2a3d;
   --s0: #e66767; --s1: #98403f; --s2: #5d5c57; --s3: #2f6fc0; --s4: #86b6ef;
-  --op-3uk: #3987e5; --op-ee: #d95926; --op-o2: #199e70; --op-vf: #c98500;
+  --op-ee: #2fbf71; --op-o2: #5b8cff; --op-vf: #ff4545;
   --map-bg: #111519; --map-green: #16221a; --map-water: #132a40; --map-road: #2b323a; --map-mway: #46505b; --map-rail: #56606b;
   color-scheme: dark;
 }
@@ -181,7 +181,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
       <li><b>Cells and masts.</b> Each drive-test reading lists every operator's four strongest cells (PCI and EARFCN) with their RSRP. For each cell, a path-loss curve <code>RSRP = A − 10·n·log10(d)</code> is fitted to its readings, binned to 20&nbsp;m squares, which estimates where its mast is. Positions from road readings are approximate, typically a few hundred metres off.</li>
       <li><b>Hills and buildings.</b> From each mast, rays sample the Environment Agency LiDAR terrain every 20&nbsp;m; a point behind a hill loses signal by knife-edge diffraction, more at 3.5&nbsp;GHz than at 800&nbsp;MHz. Buildings and trees enter as clutter: the mean height of everything within about 150&nbsp;m, with a loss per metre fitted to the drive tests for each operator.</li>
       <li><b>Coverage.</b> On a 25&nbsp;m grid, each operator's coverage is its strongest modelled cell, shifted by the operator's median difference from the measurements. Near the roads the remaining measured − modelled difference is spread out over about 150&nbsp;m, so the map matches the drive tests there. Away from them a smooth random field (shadow fading, ±4&nbsp;dB for 4G and ±6&nbsp;dB for 5G, mostly shared between operators) stands in for what the LiDAR cannot explain, so coverage thins out unevenly with distance, as it does in reality. It is one fixed draw, not a measurement.</li>
-      <li><b>5G.</b> Most 5G readings are not tied to a cell, so 5G is modelled the way it is rolled out: a 5G cell on each of the operator's estimated masts, at its 5G frequency (EE mostly 700&nbsp;MHz, Three 3.6&nbsp;GHz), calibrated to the measured 5G. O2 and Vodafone 5G was not scanned in Exeter, so theirs is synthetic: 3.5&nbsp;GHz on all their estimated masts, with Three's calibration.</li>
+      <li><b>5G.</b> Most 5G readings are not tied to a cell, so 5G is modelled the way it is rolled out: a 5G cell on each of the operator's estimated masts, at its 5G frequency (EE mostly 700&nbsp;MHz), calibrated to the measured 5G. VMO2 and Vodafone 5G was not scanned in Exeter, so theirs is synthetic: 3.5&nbsp;GHz on all their estimated masts, calibrated to the 3.6&nbsp;GHz 5G measured on Three's network (now part of VodafoneThree).</li>
       <li><b>Residents.</b> Census 2021 residents were spread to every address (UPRN) in an earlier project; each address takes the modelled coverage of its 25&nbsp;m square. This page only holds residents per 25&nbsp;m square, not per address, so a drawn area counts the squares whose centre falls inside it.</li>
       <li><b>Not operator coverage.</b> Mast positions are estimates, there are no antenna patterns, and the drive tests are from 2022–2024. Use it as an estimate from open data, not as an operator's coverage map.</li>
       <li><b>Validation.</b> One in five 1&nbsp;km squares is held out, the whole model is rebuilt without its readings, and those squares are predicted. Errors are in dB against the measured strongest-cell RSRP.</li>
@@ -201,7 +201,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
 (() => {
   const D = JSON.parse(document.getElementById('data').textContent);
   const G = JSON.parse(document.getElementById('geo').textContent);
-  const OPS = { '3uk': 'Three', ee: 'EE', o2: 'O2', vf: 'Vodafone' };
+  const OPS = { ee: 'EE', o2: 'VMO2', vf: 'Vodafone' };
   const OPK = Object.keys(OPS);
   const SYNTH = ['o2', 'vf'];
   const T = {
@@ -211,7 +211,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
             thr: ['below −110 dBm', '−110 to −100', '−100 dBm and above'] },
   };
   const CLS = () => T[S.tech].cls;
-  const cls = (code, i) => Math.floor(code / 3 ** (3 - i)) % 3;
+  const cls = (code, i) => Math.floor(code / 3 ** (OPK.length - 1 - i)) % 3;
   const indoorCount = code => OPK.reduce((s, _, i) => s + (cls(code, i) === 2), 0);
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   const fmt = (v, d = 0) => Number.isFinite(v) ? v.toLocaleString('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d }) : '–';
@@ -226,7 +226,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   if (S.area === 'draw') S.area = 'all';
   const save = () => { try { localStorage.setItem('ecc-state', JSON.stringify({ tech: S.tech, view: S.view, layer: S.layer, area: S.area, cells: S.cells })); } catch (e) {} };
 
-  // Grids: one byte per 25 m pixel, all four operators' classes, per network
+  // Grids: one byte per 25 m pixel, the three operators' classes, per network
   const GRIDS = {};
   for (const t in D.grids) {
     const raw = atob(D.grids[t].b64), g = new Uint8Array(raw.length);
@@ -268,10 +268,10 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   const A = D.addresses, N = A.lat.length, lon = new Float64Array(N), lat = new Float64Array(N);
   for (let i = 0, acc = A.lon0; i < N; i++) { acc += A.dlon[i]; lon[i] = acc / 1e5; lat[i] = A.lat[i] / 1e5; }
 
-  // Colours: per operator none / outdoor / indoor; "all four" = number of operators with indoor coverage
+  // Colours: per operator none / outdoor / indoor; "all three" = number of operators with indoor coverage
   const rgb = h => { const m = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(m.slice(i, i + 2), 16)); };
   const palette = () => S.layer === 'all'
-    ? ['--s0', '--s1', '--s2', '--s3', '--s4'].map(css)
+    ? ['--s0', '--s1', '--s3', '--s4'].map(css)
     : ['--s0', '--s3', '--s4'].map(css);
   function layerImage() {
     const cv = document.createElement('canvas'); cv.width = Gd.w; cv.height = Gd.h;
@@ -304,7 +304,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
       const st = ['--s0', '--s1', '--s2', '--s3', '--s4'].map(css), [lo, hi] = RAMP, thr = S.tech === '4G' ? [-105, -95] : [-110, -100];
       const at = v => `${(100 * (v - lo) / (hi - lo)).toFixed(1)}%`;
       document.getElementById('legend-h').textContent = S.layer === 'all'
-        ? `Best ${S.tech} signal of the four operators (dBm)` : `${OPS[S.layer]} modelled ${S.tech} signal (dBm)${S.tech === '5G' && SYNTH.includes(S.layer) ? ', synthetic' : ''}`;
+        ? `Best ${S.tech} signal of the three operators (dBm)` : `${OPS[S.layer]} modelled ${S.tech} signal (dBm)${S.tech === '5G' && SYNTH.includes(S.layer) ? ', synthetic' : ''}`;
       document.getElementById('legend').innerHTML = `<div class="ramp" style="background:linear-gradient(90deg,${st.join(',')})"></div>` +
         `<div class="ticks">${[lo, ...thr, -80, hi].map(v => `<span class="${thr.includes(v) ? 'thr' : ''}" style="left:${at(v)}">${v < 0 ? '\u2212' : ''}${Math.abs(v)}</span>`).join('')}</div>` +
         `<div class="lrow"><span></span><span>${S.tech === '4G' ? '\u221295 indoor, \u2212105 outdoor' : '\u2212100 very high, \u2212110 high confidence'} (Ofcom). RSRP${S.tech === '5G' ? ' (SS-RSRP)' : ''} at street level.</span></div>`;
@@ -313,7 +313,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     const P = palette();
     const t = T[S.tech];
     const labels = S.layer === 'all'
-      ? ['No operator', '1 operator', '2 operators', '3 operators', 'All 4 operators']
+      ? ['No operator', '1 operator', '2 operators', 'All 3 operators']
       : t.cls.map((c, i) => `${c} (${t.thr[i]})`);
     document.getElementById('legend-h').textContent = S.layer === 'all' ? `Operators with ${t.top}` : `${OPS[S.layer]} modelled ${S.tech}${S.tech === '5G' && SYNTH.includes(S.layer) ? ' (synthetic)' : ''}`;
     document.getElementById('legend').innerHTML = labels.map((l, i) =>
@@ -353,8 +353,8 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     return 'Whole study area';
   };
 
-  function stats(idx) {
-    const r = { res: 0, addr: 0, op: OPK.map(() => [0, 0, 0]), count: [0, 0, 0, 0, 0] }, cd = codes();
+  function stats(idx, tech = S.tech) {
+    const r = { res: 0, addr: 0, op: OPK.map(() => [0, 0, 0]), count: OPK.map(() => 0).concat(0) }, cd = A.code[tech.toLowerCase()];
     for (const i of idx) {
       const p = A.pop[i], c = cd[i];
       r.res += p; r.addr += A.n[i];
@@ -384,7 +384,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     sources.sel = { type: 'geojson', data: selGeo() };
     sources.drawn = { type: 'geojson', data: drawnGeo() };
     sources.cells = { type: 'geojson', data: cellsGeo() };
-    const opColor = ['match', ['get', 'op'], '3uk', css('--op-3uk'), 'ee', css('--op-ee'), 'o2', css('--op-o2'), css('--op-vf')];
+    const opColor = ['match', ['get', 'op'], 'ee', css('--op-ee'), 'o2', css('--op-o2'), css('--op-vf')];
     return { version: 8, sources, layers: [
       { id: 'bg', type: 'background', paint: { 'background-color': css('--map-bg') } },
       { id: 'cov', type: 'raster', source: 'cov', paint: { 'raster-opacity': 0.62, 'raster-resampling': 'nearest', 'raster-fade-duration': 0 } },
@@ -400,7 +400,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
       { id: 'drawn-line', type: 'line', source: 'drawn', paint: { 'line-color': css('--accent'), 'line-width': 2.5, 'line-dasharray': [2, 1] } },
       { id: 'cells', type: 'circle', source: 'cells', layout: { visibility: S.cells ? 'visible' : 'none' },
         filter: S.layer === 'all' ? ['has', 'op'] : ['==', ['get', 'op'], S.layer],
-        paint: { 'circle-radius': 4.5, 'circle-color': opColor, 'circle-stroke-color': css('--surface'), 'circle-stroke-width': 1.5 } },
+        paint: { 'circle-radius': 5, 'circle-color': opColor, 'circle-stroke-color': '#ffffff', 'circle-stroke-width': 2.5 } },
     ] };
   }
 
@@ -409,14 +409,20 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
       mapEl.innerHTML = '<div class="map-fallback">The map library did not load. Check your connection and reload the page; the area statistics below still work.</div>';
       return;
     }
-    map = new maplibregl.Map({ container: mapEl, style: mapStyle(), bounds: [[B[0], B[1]], [B[2], B[3]]], fitBoundsOptions: { padding: 16 },
-      maxBounds: [[B[0] - 0.08, B[1] - 0.05], [B[2] + 0.08, B[3] + 0.05]], attributionControl: false, dragRotate: false,
+    // open on Exeter's populated squares (local authority 0) rather than the whole grid with its empty edges
+    let w = 180, s = 90, e = -180, n = -90;
+    for (let i = 0; i < N; i++) if (A.lad[i] === 0) { w = Math.min(w, lon[i]); e = Math.max(e, lon[i]); s = Math.min(s, lat[i]); n = Math.max(n, lat[i]); }
+    map = new maplibregl.Map({ container: mapEl, style: mapStyle(), bounds: [[w, s], [e, n]], fitBoundsOptions: { padding: 8 },
+      maxBounds: [[B[0] - 0.01, B[1] - 0.006], [B[2] + 0.01, B[3] + 0.006]], attributionControl: false, dragRotate: false,
       preserveDrawingBuffer: true });
     map.touchZoomRotate.disableRotation();
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
     map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'Basemap © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · Model from Ofcom drive tests (<a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">OGL v3.0</a>)' }), 'bottom-right');
-    map.on('load', () => { ready = true; });
+    // no zooming out past the whole modelled area: the limit is the zoom that fits it in this map's size
+    const lockZoom = () => { const c = map.cameraForBounds([[B[0], B[1]], [B[2], B[3]]], { padding: 0 }); if (c) map.setMinZoom(c.zoom); };
+    map.on('load', () => { ready = true; lockZoom(); });
+    map.on('resize', lockZoom);
     map.on('mousemove', ev => {
       if (drawing) { tip.hidden = true; return; }
       const code = codeAt(ev.lngLat.lng, ev.lngLat.lat);
@@ -473,10 +479,10 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     selIdx = selected();
     const r = stats(selIdx); last = r;
     document.getElementById('area-name').textContent = areaName();
-    const all4 = pct(r.count[4], r.res), any = pct(r.res - r.count[0], r.res);
+    const all = pct(r.count[OPK.length], r.res), any = pct(r.res - r.count[0], r.res);
     document.getElementById('stats').innerHTML = [
       [fmt(r.res), '', 'residents (Census 2021)'], [fmt(r.addr), '', 'addresses with residents'],
-      [fmt(all4, 1), '%', `${T[S.tech].top} from all four operators`], [fmt(any, 1), '%', `${T[S.tech].top} from at least one`],
+      [fmt(all, 1), '%', `${T[S.tech].top} from all three operators`], [fmt(any, 1), '%', `${T[S.tech].top} from at least one`],
     ].map(([v, u, k]) => `<div class="stat"><div class="v">${v}${u ? `<small>${u}</small>` : ''}</div><div class="k">${k}</div></div>`).join('');
     document.getElementById('mapcount').textContent = S.area === 'all' ? '' : `${fmt(r.addr)} addresses in ${fmt(selIdx.length)} squares of 25 m`;
     const P = ['--s4', '--s3', '--s0'].map(css);
@@ -484,7 +490,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     document.getElementById('tbl-h').textContent = `Residents by modelled ${S.tech} coverage · ${areaName()}`;
     document.getElementById('tbl-p').textContent = S.tech === '4G'
       ? 'Indoor means a modelled signal of at least −95 dBm, enough to reach inside most buildings. Outdoor only is −105 to −95 dBm. These are Ofcom’s 4G thresholds.'
-      : 'Ofcom’s 5G thresholds for outdoor coverage: very high confidence at −100 dBm (SS-RSRP) or more, high confidence from −110 dBm. O2 and Vodafone 5G is synthetic.';
+      : 'Ofcom’s 5G thresholds for outdoor coverage: very high confidence at −100 dBm (SS-RSRP) or more, high confidence from −110 dBm. VMO2 and Vodafone 5G is synthetic.';
     document.getElementById('tbl').innerHTML =
       `<thead><tr><th>Operator</th><th>${t.cls[2]}</th><th>${t.cls[1]}</th><th>${t.cls[0]}</th><th>Residents ${t.topShort}</th><th></th></tr></thead><tbody>` +
       OPK.map((op, o) => {
@@ -499,7 +505,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     if (!last) return;
     const r = last, rows = [['area', 'network', 'operator', 'coverage', 'residents', 'percent']];
     OPK.forEach((op, o) => [2, 1, 0].forEach(k => rows.push([areaName(), S.tech, OPS[op] + (S.tech === '5G' && SYNTH.includes(op) ? ' (synthetic)' : ''), CLS()[k].toLowerCase(), r.op[o][k], pct(r.op[o][k], r.res).toFixed(2)])));
-    r.count.forEach((v, k) => rows.push([areaName(), S.tech, `${k} of 4 operators`, T[S.tech].topShort, v, pct(v, r.res).toFixed(2)]));
+    r.count.forEach((v, k) => rows.push([areaName(), S.tech, `${k} of ${OPK.length} operators`, T[S.tech].topShort, v, pct(v, r.res).toFixed(2)]));
     const meta = [`# Exeter Coverage Checker: modelled ${S.tech} coverage from Ofcom drive tests and LiDAR terrain (not operator data)`,
       `# residents: ${r.res}; addresses: ${r.addr}; thresholds: ${S.tech === '4G' ? 'indoor >= -95 dBm, outdoor >= -105 dBm' : 'very high confidence >= -100 dBm, high >= -110 dBm (SS-RSRP)'}`];
     if (S.area === 'draw') meta.push(`# drawn area (lon lat): ${drawn.map(p => p.map(v => v.toFixed(5)).join(' ')).join(', ')}`);
@@ -512,16 +518,16 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
 
   function evidence() {
     const V = D.validation.filter(v => v.prediction === 'model + correction');
-    const ex = D.summary.find(s => s.area === 'Exeter' && s.network === '4G');
     const rm = V.map(v => v.rmse_db);
+    const ex = stats([...Array(N).keys()].filter(i => A.lad[i] === 0), '4G');   // Exeter local authority
     document.getElementById('val-p').textContent = `Held-out 1 km squares, predicted without their own readings. With the road correction, typical errors are ${fmt(Math.min(...rm), 0)}–${fmt(Math.max(...rm), 0)} dB (RMSE); tuned propagation models usually reach 8–10 dB. "Same class" is how often the model puts a 20 m square in the same coverage class as the measurement.`;
     document.getElementById('val').innerHTML = '<thead><tr><th>Operator</th><th>Network</th><th>Prediction</th><th>Squares</th><th>Bias dB</th><th>MAE dB</th><th>RMSE dB</th><th>Same class</th></tr></thead><tbody>' +
-      D.validation.map(v => `<tr><td>${esc(v.operator)}</td><td>${esc(v.network)}</td><td>${esc(v.prediction)}</td><td>${fmt(v.squares_20m)}</td><td>${fmt(v.bias_db, 1)}</td><td>${fmt(v.mae_db, 1)}</td><td>${fmt(v.rmse_db, 1)}</td><td>${fmt(v.class_agreement_pct, 0)}%</td></tr>`).join('') + '</tbody>';
+      D.validation.map(v => `<tr><td>${esc(v.operator === 'O2' ? 'VMO2' : v.operator)}</td><td>${esc(v.network)}</td><td>${esc(v.prediction)}</td><td>${fmt(v.squares_20m)}</td><td>${fmt(v.bias_db, 1)}</td><td>${fmt(v.mae_db, 1)}</td><td>${fmt(v.rmse_db, 1)}</td><td>${fmt(v.class_agreement_pct, 0)}%</td></tr>`).join('') + '</tbody>';
     document.getElementById('cn').innerHTML = [
-      ['96.5', '%', 'of premises with indoor 4G from all four operators (Ofcom)'],
-      [fmt(ex['indoor from all 4 %'], 1), '%', 'of residents with indoor 4G from all four operators (this model)'],
+      ['99.9', '%', 'of premises with indoor 4G from at least three of the four operators (Ofcom)'],
+      [fmt(pct(ex.count[OPK.length], ex.res), 1), '%', 'of residents with indoor 4G from all three operators (this model)'],
       ['100', '%', 'of premises with indoor 4G from at least one operator (Ofcom)'],
-      [fmt(100 - ex['indoor from none %'], 1), '%', 'of residents with indoor 4G from at least one operator (this model)'],
+      [fmt(pct(ex.res - ex.count[0], ex.res), 1), '%', 'of residents with indoor 4G from at least one operator (this model)'],
     ].map(([v, u, k]) => `<div class="stat"><div class="v">${v}<small>${u}</small></div><div class="k">${k}</div></div>`).join('');
   }
 
@@ -534,7 +540,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
       et.append(b);
     }
     document.getElementById('tech-note').textContent = S.tech === '5G'
-      ? 'O2 and Vodafone 5G were not scanned in Exeter: their 5G here is synthetic.' : '';
+      ? 'VMO2 and Vodafone 5G were not scanned in Exeter: their 5G here is synthetic.' : '';
     const ev = document.getElementById('seg-view'); ev.innerHTML = '';
     for (const [v, l] of [['class', 'Coverage class'], ['dbm', 'Signal (dBm)']]) {
       const b = document.createElement('button'); b.type = 'button'; b.textContent = l;
@@ -543,7 +549,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
       ev.append(b);
     }
     const el = document.getElementById('seg-layer'); el.innerHTML = '';
-    for (const [v, l] of [['all', S.view === 'dbm' ? 'Best of four' : 'All four'], ...Object.entries(OPS)]) {
+    for (const [v, l] of [['all', S.view === 'dbm' ? 'Best of three' : 'All three'], ...Object.entries(OPS)]) {
       const b = document.createElement('button'); b.type = 'button';
       if (v !== 'all') { const d = document.createElement('span'); d.className = 'dot'; d.style.background = `var(--op-${v})`; b.append(d); }
       b.append(l); b.setAttribute('aria-pressed', String(S.layer === v));
