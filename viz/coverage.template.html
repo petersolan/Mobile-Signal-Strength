@@ -1,0 +1,492 @@
+<title>Exeter Coverage Checker</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@112,600;112,700&family=Public+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>__MAPLIBRE_CSS__</style>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/maplibre-gl/4.7.1/maplibre-gl.js"></script>
+<style>
+/* Same instrument-panel system as the Signal Atlas (index.html): controls strip, map + readout, then evidence. */
+:root {
+  --bg: #f4f6f8; --surface: #fcfcfd; --ink: #10151b; --ink-2: #48515c; --muted: #7d8590;
+  --line: #dde2e7; --ghost: #e3e7eb; --accent: #1c5cab; --accent-wash: #e4eefa;
+  --s0: #c93b3a; --s1: #ee9897; --s2: #bdbcb6; --s3: #6da7ec; --s4: #1c5cab;
+  --op-3uk: #2a78d6; --op-ee: #eb6834; --op-o2: #1baf7a; --op-vf: #eda100;
+  --map-bg: #eceff2; --map-green: #dce8d8; --map-water: #bcd5ec; --map-road: #ffffff; --map-mway: #b4bdc7; --map-rail: #8e98a3;
+  --display: "Archivo", "Arial Narrow", system-ui, sans-serif;
+  --body: "Public Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0e1114; --surface: #161a1e; --ink: #eef1f4; --ink-2: #b5bdc6; --muted: #7c858f;
+    --line: #2a3037; --ghost: #23292f; --accent: #86b6ef; --accent-wash: #1a2a3d;
+    --s0: #e66767; --s1: #98403f; --s2: #5d5c57; --s3: #2f6fc0; --s4: #86b6ef;
+    --op-3uk: #3987e5; --op-ee: #d95926; --op-o2: #199e70; --op-vf: #c98500;
+    --map-bg: #111519; --map-green: #16221a; --map-water: #132a40; --map-road: #2b323a; --map-mway: #46505b; --map-rail: #56606b;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0e1114; --surface: #161a1e; --ink: #eef1f4; --ink-2: #b5bdc6; --muted: #7c858f;
+  --line: #2a3037; --ghost: #23292f; --accent: #86b6ef; --accent-wash: #1a2a3d;
+  --s0: #e66767; --s1: #98403f; --s2: #5d5c57; --s3: #2f6fc0; --s4: #86b6ef;
+  --op-3uk: #3987e5; --op-ee: #d95926; --op-o2: #199e70; --op-vf: #c98500;
+  --map-bg: #111519; --map-green: #16221a; --map-water: #132a40; --map-road: #2b323a; --map-mway: #46505b; --map-rail: #56606b;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 56px; display: grid; grid-template-columns: minmax(0, 1fr); gap: 28px; }
+@media (max-width: 480px) { .wrap { padding-inline: 16px; } select { width: 100%; } .controls > .ctl { flex: 1 1 100%; } }
+h1, h2 { font-family: var(--display); font-stretch: 112%; font-weight: 700; letter-spacing: -0.01em; text-wrap: balance; margin: 0; }
+h1 { font-size: clamp(30px, 5vw, 44px); line-height: 1.05; }
+h2 { font-size: 21px; line-height: 1.2; }
+p { margin: 0; max-width: 68ch; }
+a { color: var(--accent); }
+.eyebrow { font-family: var(--mono); font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.eyebrow a { color: inherit; }
+header { display: grid; gap: 10px; }
+header p { color: var(--ink-2); }
+
+.controls { display: flex; flex-wrap: wrap; gap: 14px 28px; align-items: end; padding-block: 14px; border-block: 1px solid var(--line); }
+.ctl { display: grid; gap: 6px; min-width: 0; }
+.ctl > span, .ctl > label { font-size: 12px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.04em; text-transform: uppercase; }
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); padding: 3px; gap: 2px; flex-wrap: wrap; }
+.seg button, .btn { font: 500 14px/1 var(--body); color: var(--ink-2); background: transparent; border: 0; border-radius: 6px; padding: 8px 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 7px; }
+.seg button:hover, .btn:hover { background: var(--accent-wash); color: var(--ink); }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--surface); }
+.seg button:focus-visible, .btn:focus-visible, select:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.btn { border: 1px solid var(--line); background: var(--surface); }
+.btn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
+select { font: 500 14px/1.2 var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; max-width: 100%; }
+.dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.row { display: flex; flex-wrap: wrap; gap: 8px; }
+
+.main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; align-items: start; }
+@media (max-width: 860px) { .main { grid-template-columns: minmax(0, 1fr); } }
+.mapbox { position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 10px; padding: 12px; min-width: 0; }
+.map { height: clamp(420px, 70vh, 700px); border-radius: 6px; overflow: hidden; background: var(--map-bg); }
+.map .maplibregl-ctrl-attrib { font: 11px/1.4 var(--body); }
+.map.drawing { cursor: crosshair; }
+.map.drawing .maplibregl-canvas { cursor: crosshair; }
+.map-fallback { display: grid; place-items: center; height: 100%; color: var(--ink-2); padding: 24px; text-align: center; }
+.tip { position: absolute; pointer-events: none; background: var(--ink); color: var(--surface); font-size: 13px; line-height: 1.5; padding: 8px 10px; border-radius: 6px; white-space: nowrap; z-index: 2; }
+.tip b { font-weight: 600; }
+.mapfoot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; font-size: 12px; color: var(--muted); padding-top: 8px; }
+
+.readout { display: grid; gap: 22px; min-width: 0; }
+.readout h3 { font: 600 12px/1.3 var(--body); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-2); margin: 0; }
+.area-name { font-family: var(--display); font-stretch: 112%; font-weight: 600; font-size: 20px; line-height: 1.2; }
+.stats { display: grid; grid-template-columns: 1fr 1fr; gap: 16px 18px; }
+.stat .v { font-family: var(--display); font-stretch: 112%; font-weight: 600; font-size: 30px; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.stat .v small { font-size: 15px; font-weight: 600; color: var(--ink-2); margin-left: 2px; }
+.stat .k { font-size: 13px; color: var(--ink-2); }
+.legend { display: grid; gap: 8px; }
+.lrow { display: grid; grid-template-columns: 14px minmax(0,1fr); gap: 10px; align-items: center; font-size: 13px; }
+.lrow .sw { width: 14px; height: 14px; border-radius: 3px; }
+
+.tbl-wrap { overflow-x: auto; min-width: 0; }
+table { border-collapse: collapse; width: 100%; font-size: 14px; }
+th, td { text-align: right; padding: 8px 10px; border-bottom: 1px solid var(--line); white-space: nowrap; }
+th:first-child, td:first-child { text-align: left; }
+th { font-size: 12px; font-weight: 600; color: var(--ink-2); letter-spacing: 0.03em; }
+td { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+td:first-child { font-family: var(--body); font-weight: 500; }
+td .opn { display: inline-flex; align-items: center; gap: 8px; }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--ghost); min-width: 90px; }
+.bar i { display: block; height: 100%; }
+
+.panel { display: grid; gap: 14px; }
+.panel > p { color: var(--ink-2); }
+.cn { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 18px; }
+@media (max-width: 860px) { .cn { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.cn .stat { border-top: 2px solid var(--ink); padding-top: 10px; display: grid; gap: 4px; }
+.notes { display: grid; gap: 8px; font-size: 14px; color: var(--ink-2); border-top: 1px solid var(--line); padding-top: 18px; }
+.notes ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; max-width: 80ch; }
+.notes code { font-family: var(--mono); font-size: 13px; }
+.credits { display: grid; gap: 6px; font-size: 13px; color: var(--muted); border-top: 1px solid var(--line); padding-top: 14px; }
+.credits a { color: var(--ink-2); }
+@media print {
+  .controls, .noprint, .maplibregl-ctrl { display: none !important; }
+  .main { grid-template-columns: minmax(0, 1fr); }
+  .map { height: 520px; }
+  body { background: #fff; }
+}
+</style>
+
+<div class="wrap">
+  <header>
+    <div class="eyebrow">Modelled 4G coverage · calibrated to Ofcom drive tests · <a href="index.html">Signal Atlas (measured)</a></div>
+    <h1>Exeter Coverage Checker</h1>
+    <p>Who can get 4G indoors, and from which operator? Coverage is modelled across Exeter from Ofcom's drive-test readings, then counted against the Census 2021 residents of every address. Pick a neighbourhood or draw your own area.</p>
+  </header>
+
+  <div class="controls" role="group" aria-label="Map and area options">
+    <div class="ctl"><span id="lab-layer">Map layer</span><div class="seg" id="seg-layer" aria-labelledby="lab-layer"></div></div>
+    <div class="ctl"><label for="area">Area</label><select id="area"></select></div>
+    <div class="ctl"><span>Draw your own</span><div class="row">
+      <button class="btn" id="draw" type="button" aria-pressed="false">Draw area</button>
+      <button class="btn" id="finish" type="button" hidden>Finish</button>
+    </div></div>
+    <div class="ctl"><span>Show</span><div class="row"><button class="btn" id="cells" type="button" aria-pressed="false">Estimated cells</button></div></div>
+  </div>
+
+  <div class="main">
+    <div class="mapbox">
+      <div class="map" id="map" role="region" aria-label="Map of modelled 4G coverage"></div>
+      <div class="tip" id="maptip" hidden></div>
+      <div class="mapfoot"><span id="map-hint">Hover the map for each operator's modelled coverage at that point</span><span id="mapcount"></span></div>
+    </div>
+    <aside class="readout">
+      <div><h3>Selected area</h3><div class="area-name" id="area-name"></div></div>
+      <div class="stats" id="stats"></div>
+      <div class="legend"><h3 id="legend-h"></h3><div id="legend"></div></div>
+      <div class="row noprint">
+        <button class="btn" id="csv" type="button">Download CSV</button>
+        <button class="btn" id="print" type="button">Print / save as PDF</button>
+      </div>
+    </aside>
+  </div>
+
+  <section class="panel">
+    <h2 id="tbl-h">Residents by modelled 4G coverage</h2>
+    <p>Indoor means a modelled signal of at least −95&nbsp;dBm, enough to reach inside most buildings. Outdoor only is −105 to −95&nbsp;dBm. These are Ofcom's 4G thresholds.</p>
+    <div class="tbl-wrap"><table id="tbl"></table></div>
+  </section>
+
+  <section class="panel">
+    <h2>How good is the model?</h2>
+    <p id="val-p"></p>
+    <div class="tbl-wrap"><table id="val"></table></div>
+  </section>
+
+  <section class="panel">
+    <h2>Against Ofcom's own prediction</h2>
+    <p>Ofcom's Connected Nations 2025 publishes the operators' own coverage predictions (snapshot 1 July 2025) for Exeter local authority, counted by premises. This model counts residents and uses only open data, so it is the more cautious of the two.</p>
+    <div class="cn" id="cn"></div>
+  </section>
+
+  <section class="notes">
+    <h2>How it works</h2>
+    <ul>
+      <li><b>Cells and masts.</b> Each drive-test reading lists every operator's four strongest cells (PCI and EARFCN) with their RSRP. For each cell, a path-loss curve <code>RSRP = A − 10·n·log10(d)</code> is fitted to its readings, binned to 20&nbsp;m squares, which estimates where its mast is. Positions from road readings are approximate, typically a few hundred metres off.</li>
+      <li><b>Coverage.</b> On a 25&nbsp;m grid, each operator's coverage is its strongest modelled cell, shifted by the operator's median difference from the measurements. Near the roads the remaining measured − modelled difference is spread out over about 150&nbsp;m, so the map matches the drive tests there and follows the model elsewhere.</li>
+      <li><b>Residents.</b> Census 2021 residents were spread to every address (UPRN) in an earlier project; each address takes the modelled coverage of its 25&nbsp;m square.</li>
+      <li><b>Not operator coverage.</b> The model has no terrain, building clutter or antenna patterns, and the drive tests are from 2022–2024. Use it as an estimate from open data, not as an operator's coverage map.</li>
+      <li><b>Validation.</b> One in five 1&nbsp;km squares is held out, the whole model is rebuilt without its readings, and those squares are predicted. Errors are in dB against the measured strongest-cell RSRP.</li>
+    </ul>
+  </section>
+
+  <footer class="credits">
+    <p>Contains public sector information licensed under the <a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">Open Government Licence v3.0</a>: Ofcom <a href="https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/mobile-signal-strength-measurement-data" target="_blank" rel="noopener">mobile signal strength measurement data</a> and Connected Nations 2025; ONS Census 2021 and ONS UPRN Directory; MSOA names © House of Commons Library. Contains OS data © Crown copyright and database right.</p>
+    <p>Basemap © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>, available under the Open Database Licence. Map rendering by <a href="https://maplibre.org/" target="_blank" rel="noopener">MapLibre GL JS</a> (BSD-3-Clause).</p>
+    <p>This is an independent project. It is not produced, approved or endorsed by Ofcom or any mobile operator. <a href="https://github.com/petersolan/Mobile-Signal-Strength" target="_blank" rel="noopener">Source code and data</a>.</p>
+  </footer>
+</div>
+
+<script id="data" type="application/json">__DATA__</script>
+<script id="geo" type="application/json">__GEO__</script>
+<script>
+(() => {
+  const D = JSON.parse(document.getElementById('data').textContent);
+  const G = JSON.parse(document.getElementById('geo').textContent);
+  const OPS = { '3uk': 'Three', ee: 'EE', o2: 'O2', vf: 'Vodafone' };
+  const OPK = Object.keys(OPS);
+  const CLS = ['No coverage', 'Outdoor only', 'Indoor'];
+  const cls = (code, i) => Math.floor(code / 3 ** (3 - i)) % 3;
+  const indoorCount = code => OPK.reduce((s, _, i) => s + (cls(code, i) === 2), 0);
+  const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  const fmt = (v, d = 0) => Number.isFinite(v) ? v.toLocaleString('en-GB', { minimumFractionDigits: d, maximumFractionDigits: d }) : '–';
+  const pct = (a, b) => b ? 100 * a / b : NaN;
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+
+  const S = { layer: 'all', area: 'all', cells: false };
+  try { const s = JSON.parse(localStorage.getItem('ecc-state') || 'null'); if (s) Object.assign(S, s); } catch (e) {}
+  if (S.layer !== 'all' && !OPS[S.layer]) S.layer = 'all';
+  if (S.area === 'draw') S.area = 'all';
+  const save = () => { try { localStorage.setItem('ecc-state', JSON.stringify({ layer: S.layer, area: S.area, cells: S.cells })); } catch (e) {} };
+
+  // Grid: one byte per 25 m pixel, all four operators' classes
+  const Gd = D.grid, raw = atob(Gd.b64), grid = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) grid[i] = raw.charCodeAt(i);
+  const merc = (lon, lat) => [lon * 20037508.34 / 180, Math.log(Math.tan((90 + lat) * Math.PI / 360)) * 6378137];
+  const [gx0, gy0] = merc(Gd.bounds[0], Gd.bounds[1]), [gx1, gy1] = merc(Gd.bounds[2], Gd.bounds[3]);
+  const codeAt = (lon, lat) => {
+    const [x, y] = merc(lon, lat);
+    const c = Math.floor((x - gx0) / (gx1 - gx0) * Gd.w), r = Math.floor((gy1 - y) / (gy1 - gy0) * Gd.h);
+    return c < 0 || r < 0 || c >= Gd.w || r >= Gd.h ? 255 : grid[r * Gd.w + c];
+  };
+
+  // Addresses
+  const A = D.addresses, N = A.lat.length, lon = new Float64Array(N), lat = new Float64Array(N);
+  for (let i = 0, acc = A.lon0; i < N; i++) { acc += A.dlon[i]; lon[i] = acc / 1e5; lat[i] = A.lat[i] / 1e5; }
+
+  // Colours: per operator none / outdoor / indoor; "all four" = number of operators with indoor coverage
+  const rgb = h => { const m = h.replace('#', ''); return [0, 2, 4].map(i => parseInt(m.slice(i, i + 2), 16)); };
+  const palette = () => S.layer === 'all'
+    ? ['--s0', '--s1', '--s2', '--s3', '--s4'].map(css)
+    : ['--s0', '--s3', '--s4'].map(css);
+  function layerImage() {
+    const cv = document.createElement('canvas'); cv.width = Gd.w; cv.height = Gd.h;
+    const ctx = cv.getContext('2d'), img = ctx.createImageData(Gd.w, Gd.h), P = palette().map(rgb);
+    const oi = OPK.indexOf(S.layer);
+    for (let p = 0; p < grid.length; p++) {
+      const code = grid[p]; if (code === 255) continue;
+      const c = P[S.layer === 'all' ? indoorCount(code) : cls(code, oi)];
+      img.data.set([c[0], c[1], c[2], 255], p * 4);
+    }
+    ctx.putImageData(img, 0, 0);
+    return cv.toDataURL();
+  }
+  function legend() {
+    const P = palette();
+    const labels = S.layer === 'all'
+      ? ['No operator indoors', '1 operator indoors', '2 operators indoors', '3 operators indoors', 'All 4 operators indoors']
+      : ['No coverage (below −105 dBm)', 'Outdoor only (−105 to −95)', 'Indoor (−95 dBm and above)'];
+    document.getElementById('legend-h').textContent = S.layer === 'all' ? 'Operators with indoor 4G' : `${OPS[S.layer]} modelled 4G`;
+    document.getElementById('legend').innerHTML = labels.map((l, i) =>
+      `<div class="lrow"><span class="sw" style="background:${P[i]};opacity:.75"></span><span>${l}</span></div>`).join('');
+  }
+
+  // Areas
+  const areaSel = document.getElementById('area');
+  areaSel.innerHTML = `<option value="all">Whole study area</option>` +
+    `<optgroup label="Local authority">${A.lads.map((l, i) => `<option value="lad:${i}">${esc(l.name)}</option>`).join('')}</optgroup>` +
+    A.lads.map((l, li) => {
+      const ms = A.msoas.map((m, i) => ({ ...m, i })).filter(m => m.lad === li);
+      return ms.length ? `<optgroup label="${esc(l.name)} neighbourhoods">${ms.map(m => `<option value="msoa:${m.i}">${esc(m.name)}</option>`).join('')}</optgroup>` : '';
+    }).join('') + `<option value="draw" disabled>Drawn area</option>`;
+  let drawn = [], drawing = false;
+  const inPoly = (x, y, poly) => {
+    let inside = false;
+    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+      const [xi, yi] = poly[i], [xj, yj] = poly[j];
+      if ((yi > y) !== (yj > y) && x < (xj - xi) * (y - yi) / (yj - yi) + xi) inside = !inside;
+    }
+    return inside;
+  };
+  function selected() {
+    const [t, v] = S.area.split(':'), k = +v, out = [];
+    for (let i = 0; i < N; i++) {
+      if (t === 'all' || (t === 'lad' && A.lad[i] === k) || (t === 'msoa' && A.msoa[i] === k) ||
+          (t === 'draw' && drawn.length > 2 && inPoly(lon[i], lat[i], drawn))) out.push(i);
+    }
+    return out;
+  }
+  const areaName = () => {
+    const [t, v] = S.area.split(':');
+    if (t === 'lad') return A.lads[+v].name;
+    if (t === 'msoa') { const m = A.msoas[+v]; return `${m.name} (${A.lads[m.lad].name})`; }
+    if (t === 'draw') return 'Drawn area';
+    return 'Whole study area';
+  };
+
+  function stats(idx) {
+    const r = { res: 0, addr: idx.length, op: OPK.map(() => [0, 0, 0]), count: [0, 0, 0, 0, 0] };
+    for (const i of idx) {
+      const p = A.pop[i], c = A.code[i];
+      r.res += p;
+      OPK.forEach((_, o) => { r.op[o][cls(c, o)] += p; });
+      r.count[indoorCount(c)] += p;
+    }
+    return r;
+  }
+
+  // Map
+  const mapEl = document.getElementById('map'), tip = document.getElementById('maptip');
+  let map = null, ready = false, imgUrl = null;
+  const zw = (a, b) => ['interpolate', ['exponential', 1.6], ['zoom'], 11, a, 17, b];
+  const B = Gd.bounds, corners = [[B[0], B[3]], [B[2], B[3]], [B[2], B[1]], [B[0], B[1]]];
+  const cellsGeo = () => ({ type: 'FeatureCollection', features: OPK.flatMap(op => (D.cells[op] || []).map(p => ({ type: 'Feature', properties: { op }, geometry: { type: 'Point', coordinates: p } }))) });
+  const drawnGeo = () => drawn.length < 2 ? { type: 'FeatureCollection', features: [] } : {
+    type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: drawing
+      ? { type: 'LineString', coordinates: drawn } : { type: 'Polygon', coordinates: [[...drawn, drawn[0]]] } }] };
+  let selIdx = [];
+  const selGeo = () => S.area === 'all' ? { type: 'FeatureCollection', features: [] } :
+    { type: 'FeatureCollection', features: selIdx.map(i => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [lon[i], lat[i]] } })) };
+
+  function mapStyle() {
+    const sources = {};
+    for (const k in G) sources[k] = { type: 'geojson', data: G[k] };
+    sources.cov = { type: 'image', url: imgUrl, coordinates: corners };
+    sources.sel = { type: 'geojson', data: selGeo() };
+    sources.drawn = { type: 'geojson', data: drawnGeo() };
+    sources.cells = { type: 'geojson', data: cellsGeo() };
+    const opColor = ['match', ['get', 'op'], '3uk', css('--op-3uk'), 'ee', css('--op-ee'), 'o2', css('--op-o2'), css('--op-vf')];
+    return { version: 8, sources, layers: [
+      { id: 'bg', type: 'background', paint: { 'background-color': css('--map-bg') } },
+      { id: 'cov', type: 'raster', source: 'cov', paint: { 'raster-opacity': 0.62, 'raster-resampling': 'nearest', 'raster-fade-duration': 0 } },
+      { id: 'water', type: 'fill', source: 'water', paint: { 'fill-color': css('--map-water'), 'fill-opacity': 0.85 } },
+      { id: 'river', type: 'line', source: 'river', paint: { 'line-color': css('--map-water'), 'line-width': zw(1.2, 8) } },
+      { id: 'minor', type: 'line', source: 'minor', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': css('--map-road'), 'line-width': zw(0.4, 5), 'line-opacity': 0.8 } },
+      { id: 'mid', type: 'line', source: 'mid', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': css('--map-road'), 'line-width': zw(0.8, 8), 'line-opacity': 0.85 } },
+      { id: 'major', type: 'line', source: 'major', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': css('--map-road'), 'line-width': zw(1.4, 11) } },
+      { id: 'motorway', type: 'line', source: 'motorway', layout: { 'line-cap': 'round', 'line-join': 'round' }, paint: { 'line-color': css('--map-mway'), 'line-width': zw(2, 14) } },
+      { id: 'rail', type: 'line', source: 'rail', paint: { 'line-color': css('--map-rail'), 'line-width': zw(1, 3), 'line-dasharray': [3, 2] } },
+      { id: 'sel', type: 'circle', source: 'sel', paint: { 'circle-radius': zw(0.8, 3.5), 'circle-color': css('--ink'), 'circle-opacity': 0.55 } },
+      { id: 'drawn-fill', type: 'fill', source: 'drawn', filter: ['==', ['geometry-type'], 'Polygon'], paint: { 'fill-color': css('--accent'), 'fill-opacity': 0.08 } },
+      { id: 'drawn-line', type: 'line', source: 'drawn', paint: { 'line-color': css('--accent'), 'line-width': 2.5, 'line-dasharray': [2, 1] } },
+      { id: 'cells', type: 'circle', source: 'cells', layout: { visibility: S.cells ? 'visible' : 'none' },
+        filter: S.layer === 'all' ? ['has', 'op'] : ['==', ['get', 'op'], S.layer],
+        paint: { 'circle-radius': 4.5, 'circle-color': opColor, 'circle-stroke-color': css('--surface'), 'circle-stroke-width': 1.5 } },
+    ] };
+  }
+
+  function initMap() {
+    if (!window.maplibregl) {
+      mapEl.innerHTML = '<div class="map-fallback">The map library did not load. Check your connection and reload the page; the area statistics below still work.</div>';
+      return;
+    }
+    map = new maplibregl.Map({ container: mapEl, style: mapStyle(), bounds: [[B[0], B[1]], [B[2], B[3]]], fitBoundsOptions: { padding: 16 },
+      maxBounds: [[B[0] - 0.08, B[1] - 0.05], [B[2] + 0.08, B[3] + 0.05]], attributionControl: false, dragRotate: false,
+      preserveDrawingBuffer: true });
+    map.touchZoomRotate.disableRotation();
+    map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
+    map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
+    map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'Basemap © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · Model from Ofcom drive tests (<a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">OGL v3.0</a>)' }), 'bottom-right');
+    map.on('load', () => { ready = true; });
+    map.on('mousemove', ev => {
+      if (drawing) { tip.hidden = true; return; }
+      const code = codeAt(ev.lngLat.lng, ev.lngLat.lat);
+      if (code === 255) { tip.hidden = true; return; }
+      tip.innerHTML = OPK.map((op, i) => `<b>${OPS[op]}</b> ${CLS[cls(code, i)].toLowerCase()}`).join('<br>');
+      tip.hidden = false;
+      const bw = mapEl.clientWidth, bh = mapEl.clientHeight;
+      let tx = ev.point.x + 14, ty = ev.point.y + 14;
+      if (tx + tip.offsetWidth > bw - 6) tx = ev.point.x - tip.offsetWidth - 14;
+      if (ty + tip.offsetHeight > bh - 6) ty = ev.point.y - tip.offsetHeight - 14;
+      tip.style.left = mapEl.offsetLeft + tx + 'px'; tip.style.top = mapEl.offsetTop + ty + 'px';
+    });
+    map.on('mouseout', () => { tip.hidden = true; });
+    map.on('click', ev => {
+      if (!drawing) return;
+      drawn.push([ev.lngLat.lng, ev.lngLat.lat]);
+      map.getSource('drawn')?.setData(drawnGeo());
+      document.getElementById('map-hint').textContent = `${drawn.length} point${drawn.length > 1 ? 's' : ''} · click to add more, double-click or Finish to close the area`;
+    });
+    map.on('dblclick', ev => { if (drawing) { ev.preventDefault(); finishDrawing(); } });
+  }
+
+  function startDrawing() {
+    drawing = true; drawn = [];
+    map?.doubleClickZoom.disable(); mapEl.classList.add('drawing');
+    document.getElementById('draw').setAttribute('aria-pressed', 'true');
+    document.getElementById('draw').textContent = 'Cancel';
+    document.getElementById('finish').hidden = false;
+    document.getElementById('map-hint').textContent = 'Click on the map to add corners of your area';
+    map?.getSource('drawn')?.setData(drawnGeo());
+  }
+  function stopDrawing() {
+    drawing = false; mapEl.classList.remove('drawing');
+    setTimeout(() => map?.doubleClickZoom.enable(), 0);
+    document.getElementById('draw').setAttribute('aria-pressed', 'false');
+    document.getElementById('draw').textContent = 'Draw area';
+    document.getElementById('finish').hidden = true;
+    document.getElementById('map-hint').textContent = 'Hover the map for each operator’s modelled coverage at that point';
+  }
+  function finishDrawing() {
+    // a double-click also fires two clicks: drop the duplicate last corner
+    while (drawn.length > 1 && Math.hypot(drawn.at(-1)[0] - drawn.at(-2)[0], drawn.at(-1)[1] - drawn.at(-2)[1]) < 1e-6) drawn.pop();
+    if (drawn.length < 3) { stopDrawing(); drawn = []; map?.getSource('drawn')?.setData(drawnGeo()); return; }
+    stopDrawing(); S.area = 'draw'; render(false);
+  }
+
+  // Readout, table, exports
+  let last = null;
+  function readout() {
+    selIdx = selected();
+    const r = stats(selIdx); last = r;
+    document.getElementById('area-name').textContent = areaName();
+    const all4 = pct(r.count[4], r.res), any = pct(r.res - r.count[0], r.res);
+    document.getElementById('stats').innerHTML = [
+      [fmt(r.res), '', 'residents (Census 2021)'], [fmt(r.addr), '', 'addresses with residents'],
+      [fmt(all4, 1), '%', 'indoor 4G from all four operators'], [fmt(any, 1), '%', 'indoor 4G from at least one'],
+    ].map(([v, u, k]) => `<div class="stat"><div class="v">${v}${u ? `<small>${u}</small>` : ''}</div><div class="k">${k}</div></div>`).join('');
+    document.getElementById('mapcount').textContent = S.area === 'all' ? '' : `${fmt(r.addr)} addresses selected`;
+    const P = ['--s4', '--s3', '--s0'].map(css);
+    document.getElementById('tbl-h').textContent = `Residents by modelled 4G coverage · ${areaName()}`;
+    document.getElementById('tbl').innerHTML =
+      '<thead><tr><th>Operator</th><th>Indoor</th><th>Outdoor only</th><th>No coverage</th><th>Residents indoor</th><th></th></tr></thead><tbody>' +
+      OPK.map((op, o) => {
+        const [none, out, ind] = r.op[o];
+        return `<tr><td><span class="opn"><span class="dot" style="background:var(--op-${op})"></span>${OPS[op]}</span></td>` +
+          `<td>${fmt(pct(ind, r.res), 1)}%</td><td>${fmt(pct(out, r.res), 1)}%</td><td>${fmt(pct(none, r.res), 1)}%</td><td>${fmt(ind)}</td>` +
+          `<td><div class="bar" aria-hidden="true"><i style="width:${pct(ind, r.res)}%;background:${P[0]}"></i><i style="width:${pct(out, r.res)}%;background:${P[1]}"></i><i style="width:${pct(none, r.res)}%;background:${P[2]}"></i></div></td></tr>`;
+      }).join('') + '</tbody>';
+  }
+
+  function csv() {
+    if (!last) return;
+    const r = last, rows = [['area', 'operator', 'coverage', 'residents', 'percent']];
+    OPK.forEach((op, o) => [2, 1, 0].forEach(k => rows.push([areaName(), OPS[op], CLS[k].toLowerCase(), r.op[o][k], pct(r.op[o][k], r.res).toFixed(2)])));
+    r.count.forEach((v, k) => rows.push([areaName(), `${k} of 4 operators`, 'indoor', v, pct(v, r.res).toFixed(2)]));
+    const meta = ['# Exeter Coverage Checker: modelled 4G coverage from Ofcom drive tests (not operator data)',
+      `# residents: ${r.res}; addresses: ${r.addr}; thresholds: indoor >= -95 dBm, outdoor >= -105 dBm`];
+    if (S.area === 'draw') meta.push(`# drawn area (lon lat): ${drawn.map(p => p.map(v => v.toFixed(5)).join(' ')).join(', ')}`);
+    const text = meta.join('\n') + '\n' + rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\n') + '\n';
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
+    a.download = `coverage_${areaName().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}.csv`;
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  }
+
+  function evidence() {
+    const V = D.validation.filter(v => v.prediction === 'model + correction');
+    const rm = V.map(v => v.rmse_db);
+    document.getElementById('val-p').textContent = `Held-out 1 km squares, predicted without their own readings. With the road correction, typical errors are ${fmt(Math.min(...rm), 0)}–${fmt(Math.max(...rm), 0)} dB (RMSE); tuned propagation models usually reach 8–10 dB. "Same class" is how often the model puts a 20 m square in the same coverage class as the measurement.`;
+    document.getElementById('val').innerHTML = '<thead><tr><th>Operator</th><th>Prediction</th><th>Squares</th><th>Bias dB</th><th>MAE dB</th><th>RMSE dB</th><th>Same class</th></tr></thead><tbody>' +
+      D.validation.map(v => `<tr><td>${esc(v.operator)}</td><td>${esc(v.prediction)}</td><td>${fmt(v.squares_20m)}</td><td>${fmt(v.bias_db, 1)}</td><td>${fmt(v.mae_db, 1)}</td><td>${fmt(v.rmse_db, 1)}</td><td>${fmt(v.class_agreement_pct, 0)}%</td></tr>`).join('') + '</tbody>';
+    const ex = D.summary.find(s => s.area === 'Exeter');
+    document.getElementById('cn').innerHTML = [
+      ['96.5', '%', 'of premises with indoor 4G from all four operators (Ofcom)'],
+      [fmt(ex['indoor from all 4 %'], 1), '%', 'of residents with indoor 4G from all four operators (this model)'],
+      ['100', '%', 'of premises with indoor 4G from at least one operator (Ofcom)'],
+      [fmt(100 - ex['indoor from none %'], 1), '%', 'of residents with indoor 4G from at least one operator (this model)'],
+    ].map(([v, u, k]) => `<div class="stat"><div class="v">${v}<small>${u}</small></div><div class="k">${k}</div></div>`).join('');
+  }
+
+  function seg() {
+    const el = document.getElementById('seg-layer'); el.innerHTML = '';
+    for (const [v, l] of [['all', 'All four'], ...Object.entries(OPS)]) {
+      const b = document.createElement('button'); b.type = 'button';
+      if (v !== 'all') { const d = document.createElement('span'); d.className = 'dot'; d.style.background = `var(--op-${v})`; b.append(d); }
+      b.append(l); b.setAttribute('aria-pressed', String(S.layer === v));
+      b.onclick = () => { S.layer = v; render(true); };
+      el.append(b);
+    }
+  }
+
+  function fitSelection() {
+    if (!map || S.area === 'all' || S.area === 'draw' || !selIdx.length) return;
+    let w = 180, s = 90, e = -180, n = -90;
+    for (const i of selIdx) { w = Math.min(w, lon[i]); e = Math.max(e, lon[i]); s = Math.min(s, lat[i]); n = Math.max(n, lat[i]); }
+    map.fitBounds([[w, s], [e, n]], { padding: 40, maxZoom: 15, duration: matchMedia('(prefers-reduced-motion: reduce)').matches ? 0 : 700 });
+  }
+
+  function render(relayer) {
+    save(); seg(); legend();
+    areaSel.value = S.area;
+    document.getElementById('cells').setAttribute('aria-pressed', String(S.cells));
+    readout();
+    if (relayer || !imgUrl) imgUrl = layerImage();
+    if (!map || !ready) return;   // the map is created with the current style
+    map.setStyle(mapStyle(), { diff: false });
+  }
+
+  areaSel.onchange = () => { S.area = areaSel.value; if (S.area !== 'draw') { drawn = []; } render(false); fitSelection(); };
+  document.getElementById('draw').onclick = () => {
+    if (drawing) { stopDrawing(); drawn = []; map?.getSource('drawn')?.setData(drawnGeo()); } else startDrawing();
+  };
+  document.getElementById('finish').onclick = finishDrawing;
+  document.getElementById('cells').onclick = () => { S.cells = !S.cells; render(false); };
+  document.getElementById('csv').onclick = csv;
+  document.getElementById('print').onclick = () => window.print();
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => render(true));
+
+  evidence();
+  imgUrl = layerImage();
+  initMap();
+  render(true);
+  fitSelection();
+})();
+</script>

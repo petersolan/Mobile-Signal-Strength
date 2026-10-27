@@ -34,6 +34,38 @@ All survey years combined. Each square's value is its median RSRP (SS-RSRP for 5
 - O2 and Vodafone 5G are missing. The scanners were not tuned to their 5G channels on the Exeter passes, so this says nothing about whether they have 5G there.
 - In one 2022 stop the van was parked with the scanner running and logged about 480,000 5G readings in a single 100 m square. Each square's value is therefore the median of per-pass medians, so a parked van counts as one pass.
 
+## Coverage checker (modelled)
+
+**[Coverage checker](https://petersolan.github.io/Mobile-Signal-Strength/coverage.html)**: the drive tests only measure roads. The checker models 4G coverage everywhere in between and counts how many residents can get it indoors, from which operator, in any area: a local authority, a neighbourhood (MSOA), or one you draw. The table downloads as CSV, and the page prints as a report.
+
+How it works:
+
+1. **Cells and masts from the drive tests.** Every reading lists each operator's four strongest cells (PCI and EARFCN) with their RSRP: 740 cells across the four networks. For each cell seen often and strongly enough (531), a path-loss curve `RSRP = A − 10·n·log10(d)` is fitted to its readings, binned to 20 m squares, with a robust (soft L1) least-squares fit. This estimates where its mast is, how strong it is and how fast its signal falls off. Positions from road readings are approximate, typically a few hundred metres off: OpenStreetMap maps only 34 masts in the area, too few to check them against.
+2. **Coverage grid.** On a 25 m OS grid, an operator's coverage is its strongest modelled cell, shifted by the operator's median difference from the measurements (the strongest of many noisy curves runs high). Near the roads, the remaining measured − modelled difference is spread over about 150 m, so the grid matches the drive tests there and follows the model elsewhere.
+3. **Residents.** Census 2021 residents per address (UPRN), from the [Census-distribution](https://github.com/petersolan/GB-Census-Population-Map) project: 152,419 residents at 72,647 addresses, 130,712 of them in Exeter. Each address takes the modelled RSRP of its 25 m square and is classed with Ofcom's 4G thresholds: indoor at −95 dBm or more, outdoor only from −105 dBm.
+
+**Validation.** One in five 1 km squares (16 of 81) is held out, the cells are refitted and the correction rebuilt without their readings, and the held-out squares are predicted. Held-out areas rather than passes, because the vans drive the same roads repeatedly.
+
+| Operator | Bias, dB | RMSE, dB | Same coverage class |
+|---|---|---|---|
+| Three | −1.2 | 9.3 | 71% |
+| EE | +0.7 | 13.1 | 81% |
+| O2 | +3.0 | 10.4 | 78% |
+| Vodafone | +3.3 | 12.9 | 82% |
+
+With the road correction; the model alone is 14–17 dB RMSE. Tuned propagation models typically reach 8–10 dB.
+
+**Modelled coverage of Exeter's residents**
+
+| Operator | Indoor | Outdoor only | None |
+|---|---|---|---|
+| EE | 99.8% | 0.2% | 0% |
+| O2 | 99.6% | 0.4% | 0% |
+| Vodafone | 98.1% | 1.9% | 0% |
+| Three | 86.9% | 13.1% | 0% |
+
+86.6% of residents have indoor 4G from all four operators. Ofcom's Connected Nations 2025, from the operators' own predictions, gives 96.5% of premises. The gap is almost all Three, and this model is the more cautious of the two: it has no terrain, clutter or antenna patterns, the drive tests are from 2022–2024, and the scanner's roof antenna gain is not corrected. Both agree that every home has indoor 4G from at least one operator. Use the checker as an estimate from open data, not as an operator's coverage map.
+
 ## Repository layout
 
 ```
@@ -45,11 +77,15 @@ scripts/
   build_exeter_grid.py harmonises 4G/5G schemas, bins to the 100 m OS grid (EPSG:27700)
   build_map_layers.py  simplifies the basemap and writes the cells as WGS84 GeoJSON
   csv_to_parquet.py    optional: converts the national 2025 CSVs to Parquet with DuckDB
+  estimate_cells.py    fits a path-loss curve per 4G cell: estimated mast positions
+  extract_addresses.py Census 2021 residents per address in the study area
+  build_coverage.py    coverage grids per operator, held-out validation, residents per class
 viz/
-  atlas.template.html  the page (MapLibre GL JS 4.7.1)
+  atlas.template.html  the Signal Atlas page (MapLibre GL JS 4.7.1)
   build_page.py        inlines the data and stylesheet into docs/index.html
+  coverage.template.html, build_coverage_page.py   the coverage checker, docs/coverage.html
 data/derived/          committed outputs (see below)
-docs/index.html        the built site, served by GitHub Pages
+docs/                  the built site, served by GitHub Pages
 ```
 
 ## Rebuilding
@@ -64,7 +100,14 @@ python scripts/fetch_basemap.py
 python scripts/build_exeter_grid.py
 python scripts/build_map_layers.py
 python viz/build_page.py              # writes docs/index.html
+
+# coverage checker (needs the Census-distribution outputs next to this repo, see scripts/config.py)
+python scripts/extract_addresses.py
+python scripts/build_coverage.py      # ~3 minutes, including the validation
+python viz/build_coverage_page.py     # writes docs/coverage.html
 ```
+
+`scripts/estimate_cells.py` on its own writes the fitted cells and grouped sites as GeoPackages for QGIS.
 
 To study another area, change `BBOX` in `scripts/config.py`. Check that `RELEASES` includes the years with readings there; Ofcom's [drive route map](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/drive-route-map) shows where the vans went.
 
@@ -76,6 +119,10 @@ To study another area, change `BBOX` in `scripts/config.py`. Check that `RELEASE
 | `data/derived/exeter_grid_100m.gpkg` | 100 m cells (EPSG:27700) per tech, operator and year, with median RSRP/SINR, readings and passes; opens directly in QGIS |
 | `data/derived/exeter_grid_100m.json` | compact grid layers used by the page's charts |
 | `data/derived/exeter_map.json` | simplified OSM basemap and cell GeoJSON used by the map |
+| `data/derived/coverage_4g_<operator>.tif` | modelled 4G RSRP (dBm) on a 25 m grid, EPSG:27700 |
+| `data/derived/coverage_cells.csv` | fitted cells: estimated position, A, n and fit error |
+| `data/derived/coverage_validation.csv` | held-out errors per operator, model only and with the road correction |
+| `data/derived/coverage_summary.csv` | residents with indoor / outdoor / no modelled coverage by local authority |
 
 ## Data sources and licences
 
@@ -83,6 +130,7 @@ Contains public sector information licensed under the [Open Government Licence v
 
 - **Ofcom**, [mobile signal strength measurement data](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/mobile-signal-strength-measurement-data) (4G LTE 2022–2024; 5G NR Oct–Dec 2022, Sep 2023 and 2024). The methodology PDF on that page defines the fields. In this repo the data is filtered to Exeter, cleaned, re-projected and aggregated to a 100 m grid.
 - **Ofcom**, [Connected Nations 2025](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-2025/data-downloads-2025): predicted coverage for Exeter local authority (E07000041), quoted on the page for comparison.
+- **ONS** Census 2021 and ONS UPRN Directory, via residents per address prepared in the Census-distribution project (OGL; contains OS data © Crown copyright and database right). **House of Commons Library** [MSOA names](https://houseofcommonslibrary.github.io/msoanames/) (OGL).
 - **OpenStreetMap** basemap, © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright). The simplified basemap in `data/derived/exeter_map.json` is a derivative database and is available under the [Open Database Licence](https://opendatacommons.org/licenses/odbl/1-0/).
 - **MapLibre GL JS** renders the map. Its stylesheet is included under BSD-3-Clause; see `viz/MAPLIBRE-LICENSE.txt`.
 

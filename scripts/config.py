@@ -7,6 +7,9 @@ ARCHIVE = DATA / "archive"        # raw Ofcom zips (gitignored)
 EXTRACTS = DATA / "exeter"        # bbox extracts (gitignored)
 BASEMAP = DATA / "basemap"        # raw Overpass response (gitignored)
 DERIVED = DATA / "derived"        # small outputs, committed
+# Census 2021 residents per address (UPRN), from the Census-distribution project (read only)
+CENSUS = ROOT.parent / "Census-distribution" / "data" / "processed"
+MSOA_NAMES = "https://houseofcommonslibrary.github.io/msoanames/MSOA-Names-2.2.csv"
 
 # Exeter study area, WGS84 (south, west, north, east)
 BBOX = (50.65, -3.62, 50.78, -3.42)
