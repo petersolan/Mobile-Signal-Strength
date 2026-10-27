@@ -7,7 +7,8 @@ Data in the page, for each network (4G, 5G):
              (4G: outdoor only / indoor; 5G: high / very high confidence); 255 outside
   addresses  residents per 25 m model cell and neighbourhood (not per address): cell centre lon/lat in
              1e-5 degrees (lon delta-coded after sorting), residents, addresses, MSOA and local authority
-             index, and the class code per network
+             index, and the class code per network; plus every address's location and square (no residents),
+             to draw the selected addresses
 """
 import base64
 import json
@@ -79,15 +80,20 @@ def grid_layer(tech):
 def address_layer():
     """Residents per 25 m model cell (and neighbourhood), not per address: no address-level counts in a
     public page. All addresses in a cell share its modelled coverage, so area totals are unchanged."""
-    a = pd.read_parquet(derived / "coverage_addresses.parquet")
-    a["cx"], a["cy"] = (a.x // GRID_M).astype(int), (a.y // GRID_M).astype(int)
+    full = pd.read_parquet(derived / "coverage_addresses.parquet")
+    full["cx"], full["cy"] = (full.x // GRID_M).astype(int), (full.y // GRID_M).astype(int)
     rsrp = [f"rsrp_{tech}_{op}" for tech in THRESHOLDS for op in OPS]
     # grouped by the modelled values too: an address on a cell edge took the neighbouring cell's value
-    a = (a.groupby(["cx", "cy", "msoa21cd", "msoa_name", "lad26cd", *rsrp], as_index=False)
-          .agg(population=("population", "sum"), addresses=("uprn", "size")))
+    keys = ["cx", "cy", "msoa21cd", "msoa_name", "lad26cd", *rsrp]
+    a = full.groupby(keys, as_index=False).agg(population=("population", "sum"), addresses=("uprn", "size"))
     x, y = (a.cx + 0.5) * GRID_M, (a.cy + 0.5) * GRID_M
     lon, lat = Transformer.from_crs(27700, 4326, always_xy=True).transform(x.values, y.values)
-    a = a.assign(lon=np.round(lon * 1e5).astype(int), lat=np.round(lat * 1e5).astype(int)).sort_values(["lon", "lat"])
+    a = (a.assign(lon=np.round(lon * 1e5).astype(int), lat=np.round(lat * 1e5).astype(int))
+          .sort_values(["lon", "lat"]).reset_index(drop=True))
+    # address locations (open data, without residents) to draw the selected addresses on the map
+    pts = full[keys + ["x", "y"]].merge(a[keys].reset_index().rename(columns={"index": "cell"}), on=keys)
+    plon, plat = Transformer.from_crs(27700, 4326, always_xy=True).transform(pts.x.values, pts.y.values)
+    pts = pts.assign(lon=np.round(plon * 1e5).astype(int), lat=np.round(plat * 1e5).astype(int)).sort_values(["lon", "lat"])
     code = {tech: sum(classes(a[f"rsrp_{tech}_{op}"].values, tech).astype(int) * 3 ** (len(OPS) - 1 - i)
                       for i, op in enumerate(OPS)).tolist() for tech in THRESHOLDS}
     msoas = (a[["msoa21cd", "msoa_name", "lad26cd"]].drop_duplicates("msoa21cd")
@@ -98,6 +104,8 @@ def address_layer():
         lon0=int(a.lon.iloc[0]), dlon=np.diff(a.lon.values, prepend=a.lon.iloc[0]).tolist(),
         lat=a.lat.tolist(), pop=a.population.astype(int).tolist(), n=a.addresses.astype(int).tolist(),
         msoa=[m_idx[c] for c in a.msoa21cd], lad=[lads.index(c) for c in a.lad26cd], code=code,
+        points=dict(lon0=int(pts.lon.iloc[0]), dlon=np.diff(pts.lon.values, prepend=pts.lon.iloc[0]).tolist(),
+                    lat=pts.lat.tolist(), cell=pts.cell.tolist()),
         msoas=[dict(code=r.msoa21cd, name=r.msoa_name, lad=lads.index(r.lad26cd)) for r in msoas.itertuples()],
         lads=[dict(code=c, name=LADS[c]) for c in lads])
 

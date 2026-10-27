@@ -374,8 +374,16 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: drawing
       ? { type: 'LineString', coordinates: drawn } : { type: 'Polygon', coordinates: [[...drawn, drawn[0]]] } }] };
   let selIdx = [];
-  const selGeo = () => S.area === 'all' ? { type: 'FeatureCollection', features: [] } :
-    { type: 'FeatureCollection', features: selIdx.map(i => ({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [lon[i], lat[i]] } })) };
+  // address locations (no residents): the dots drawn for a selected area
+  const PT = A.points, NP = PT.lat.length, plon = new Float64Array(NP), plat = new Float64Array(NP);
+  for (let i = 0, acc = PT.lon0; i < NP; i++) { acc += PT.dlon[i]; plon[i] = acc / 1e5; plat[i] = PT.lat[i] / 1e5; }
+  const selGeo = () => {
+    if (S.area === 'all') return { type: 'FeatureCollection', features: [] };
+    const on = new Uint8Array(N); for (const i of selIdx) on[i] = 1;
+    const features = [];
+    for (let j = 0; j < NP; j++) if (on[PT.cell[j]]) features.push({ type: 'Feature', properties: {}, geometry: { type: 'Point', coordinates: [plon[j], plat[j]] } });
+    return { type: 'FeatureCollection', features };
+  };
 
   function mapStyle() {
     const sources = {};
