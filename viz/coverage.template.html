@@ -368,7 +368,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   const mapEl = document.getElementById('map'), tip = document.getElementById('maptip');
   let map = null, ready = false, imgUrl = null;
   const zw = (a, b) => ['interpolate', ['exponential', 1.6], ['zoom'], 11, a, 17, b];
-  const B = Gd.bounds, corners = [[B[0], B[3]], [B[2], B[3]], [B[2], B[1]], [B[0], B[1]]];
+  const B = Gd.bounds, I = Gd.inner, corners = [[B[0], B[3]], [B[2], B[3]], [B[2], B[1]], [B[0], B[1]]];
   const cellsGeo = () => ({ type: 'FeatureCollection', features: OPK.flatMap(op => (D.cells[S.tech.toLowerCase()][op] || []).map(p => ({ type: 'Feature', properties: { op }, geometry: { type: 'Point', coordinates: p } }))) });
   const drawnGeo = () => drawn.length < 2 ? { type: 'FeatureCollection', features: [] } : {
     type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: drawing
@@ -413,14 +413,18 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     let w = 180, s = 90, e = -180, n = -90;
     for (let i = 0; i < N; i++) if (A.lad[i] === 0) { w = Math.min(w, lon[i]); e = Math.max(e, lon[i]); s = Math.min(s, lat[i]); n = Math.max(n, lat[i]); }
     map = new maplibregl.Map({ container: mapEl, style: mapStyle(), bounds: [[w, s], [e, n]], fitBoundsOptions: { padding: 8 },
-      maxBounds: [[B[0] - 0.01, B[1] - 0.006], [B[2] + 0.01, B[3] + 0.006]], attributionControl: false, dragRotate: false,
+      maxBounds: [[I[0], I[1]], [I[2], I[3]]], attributionControl: false, dragRotate: false,
       preserveDrawingBuffer: true });
     map.touchZoomRotate.disableRotation();
     map.addControl(new maplibregl.NavigationControl({ showCompass: false }), 'top-right');
     map.addControl(new maplibregl.ScaleControl({ unit: 'metric' }), 'bottom-left');
     map.addControl(new maplibregl.AttributionControl({ compact: true, customAttribution: 'Basemap © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a> · Model from Ofcom drive tests (<a href="https://www.nationalarchives.gov.uk/doc/open-government-licence/version/3/" target="_blank" rel="noopener">OGL v3.0</a>)' }), 'bottom-right');
-    // no zooming out past the whole modelled area: the limit is the zoom that fits it in this map's size
-    const lockZoom = () => { const c = map.cameraForBounds([[B[0], B[1]], [B[2], B[3]]], { padding: 0 }); if (c) map.setMinZoom(c.zoom); };
+    // no zooming out past the data: at the limit the map is still covered by the data rectangle, whatever its shape
+    const lockZoom = () => {
+      const a = map.project([I[0], I[3]]), b = map.project([I[2], I[1]]), cv = map.getCanvas();
+      const cover = map.getZoom() + Math.log2(Math.max(cv.clientWidth / Math.abs(b.x - a.x), cv.clientHeight / Math.abs(b.y - a.y)));
+      if (Number.isFinite(cover)) map.setMinZoom(cover);
+    };
     map.on('load', () => { ready = true; lockZoom(); });
     map.on('resize', lockZoom);
     map.on('mousemove', ev => {

@@ -44,6 +44,7 @@ def grid_layer(tech):
     codes, meta, pngs = None, None, {}
     for i, op in enumerate(OPS):
         with rasterio.open(derived / f"coverage_{tech}_{op}.tif") as src:
+            grid_bounds = src.bounds
             if meta is None:
                 t, w, h = calculate_default_transform(src.crs, "EPSG:3857", src.width, src.height, *src.bounds)
                 meta = (t, w, h)
@@ -66,8 +67,13 @@ def grid_layer(tech):
     to_ll = Transformer.from_crs(3857, 4326, always_xy=True)
     west, north = to_ll.transform(t.c, t.f)
     east, south = to_ll.transform(t.c + t.a * w, t.f + t.e * h)
-    return dict(w=w, h=h, bounds=[west, south, east, north], b64=base64.b64encode(codes.tobytes()).decode(),
-                dbm=pngs)
+    # the largest upright rectangle with data everywhere: the OS grid square sits slightly tilted on a web map,
+    # so it runs between the second-smallest and second-largest longitude and latitude of its corners
+    xs, ys = Transformer.from_crs(27700, 4326, always_xy=True).transform(
+        [grid_bounds[0], grid_bounds[2], grid_bounds[2], grid_bounds[0]], [grid_bounds[1], grid_bounds[1], grid_bounds[3], grid_bounds[3]])
+    (_, iw, ie, _), (_, isth, inn, _) = sorted(xs), sorted(ys)
+    return dict(w=w, h=h, bounds=[west, south, east, north], inner=[iw, isth, ie, inn],
+                b64=base64.b64encode(codes.tobytes()).decode(), dbm=pngs)
 
 
 def address_layer():
