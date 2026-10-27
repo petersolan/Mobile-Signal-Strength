@@ -22,27 +22,36 @@ from sklearn.cluster import DBSCAN
 
 from config import DERIVED, EXTRACTS
 
-YEARS = ("2022", "2023", "2024")
+RELEASES = {"4G": ("4g-lte-2022", "4g-lte-2023", "4g-lte-2024"),
+            "5G": ("5g-nr-oct22-dec22", "5g-nr-sep23", "5g-nr-2024")}
+CHANNEL = ("earfcn", "arfcn", "nr_arfcn")   # the 5G channel column was renamed between releases
 OPERATORS = {"3uk": "Three", "ee": "EE", "o2": "O2", "vf": "Vodafone"}
 BIN_M = 20            # bin size for readings, m
 MIN_BINS = 25         # cells seen in fewer bins are not fitted
 MIN_BEST = -95.0      # ... nor cells never stronger than this (dBm): too far away to place
 HEIGHT_M = 30.0       # assumed antenna height above the road, m
 SITE_EPS_M = 150.0    # cells of one operator closer than this form one site
+N_MIN, N_MAX = 2.8, 4.5   # path-loss slope: the urban macro range (2 is free space, which reaches far too far)
 
 
-def load_readings() -> pd.DataFrame:
-    """All four strongest cells of every operator in every reading, one row each."""
+def load_readings(tech: str = "4G") -> pd.DataFrame:
+    """All four strongest cells of every operator in every reading, one row each. For 5G, the RSRP is
+    SS-RSRP and the channel an NR-ARFCN (still called earfcn here)."""
     parts = []
-    for yr in YEARS:
-        src = f"read_csv_auto('{(EXTRACTS / f'4g-lte-{yr}-exeter.csv').as_posix()}', all_varchar=true)"
+    for release in RELEASES[tech]:
+        src = f"read_csv_auto('{(EXTRACTS / f'{release}-exeter.csv').as_posix()}', all_varchar=true)"
+        cols = set(duckdb.sql(f"select * from {src} limit 0").columns)
         for op in OPERATORS:
             for k in range(1, 5):
-                parts.append(f"select '{yr}' yr, '{op}' op, latitude, longitude, hour_ref, "
-                             f"pci_top{k}_{op} pci, earfcn_top{k}_{op} earfcn, rsrp_top{k}_{op} rsrp from {src}")
+                chan = next((f"{c}_top{k}_{op}" for c in CHANNEL if f"{c}_top{k}_{op}" in cols), None)
+                if chan is None or f"rsrp_top{k}_{op}" not in cols:
+                    continue
+                parts.append(f"select '{release}' yr, '{op}' op, latitude, longitude, hour_ref, "
+                             f"pci_top{k}_{op} pci, {chan} earfcn, rsrp_top{k}_{op} rsrp from {src}")
     q = ("select yr, op, latitude::double lat, longitude::double lon, hour_ref, pci::int pci, earfcn::int earfcn, "
          "rsrp::double rsrp from (" + " union all ".join(parts) + ") "
-         "where try_cast(rsrp as double) is not null and try_cast(pci as int) is not null")
+         "where try_cast(rsrp as double) is not null and try_cast(pci as int) is not null "
+         "and try_cast(earfcn as int) is not null")
     df = duckdb.sql(q).df()
     x, y = Transformer.from_crs(4326, 27700, always_xy=True).transform(df.lon.values, df.lat.values)
     return df.assign(x=x, y=y)
@@ -60,7 +69,7 @@ def fit_cell(b: pd.DataFrame):
 
     span = 5000
     r = least_squares(resid, [x0, y0, top.rsrp.max() + 60, 3.5], loss="soft_l1", f_scale=6,
-                      bounds=([x0 - span, y0 - span, -100, 2], [x0 + span, y0 + span, 100, 5]))
+                      bounds=([x0 - span, y0 - span, -100, N_MIN], [x0 + span, y0 + span, 100, N_MAX]))
     rmse = float(np.sqrt(np.mean(resid(r.x) ** 2)))
     return r.x, rmse, (x0, y0)
 

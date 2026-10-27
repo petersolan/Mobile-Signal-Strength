@@ -6,7 +6,7 @@ data/derived/*
 !data/derived/exeter_grid_100m.gpkg
 !data/derived/exeter_map.json
 !data/derived/exeter_readings.parquet
-!data/derived/coverage_4g_*.tif
+!data/derived/coverage_*g_*.tif
 !data/derived/coverage_cells.csv
 !data/derived/coverage_summary.csv
 !data/derived/coverage_validation.csv

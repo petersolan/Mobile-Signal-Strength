@@ -60,6 +60,7 @@ header p { color: var(--ink-2); }
 .btn[aria-pressed="true"] { background: var(--ink); color: var(--surface); border-color: var(--ink); }
 select { font: 500 14px/1.2 var(--body); color: var(--ink); background: var(--surface); border: 1px solid var(--line); border-radius: 8px; padding: 8px 10px; max-width: 100%; }
 .dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.ctl-note { font-size: 13px; color: var(--muted); max-width: 40ch; margin: 0; }
 .row { display: flex; flex-wrap: wrap; gap: 8px; }
 
 .main { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 28px; align-items: start; }
@@ -84,6 +85,11 @@ select { font: 500 14px/1.2 var(--body); color: var(--ink); background: var(--su
 .legend { display: grid; gap: 8px; }
 .lrow { display: grid; grid-template-columns: 14px minmax(0,1fr); gap: 10px; align-items: center; font-size: 13px; }
 .lrow .sw { width: 14px; height: 14px; border-radius: 3px; }
+.ramp { height: 12px; border-radius: 3px; opacity: .8; }
+.ticks { position: relative; height: 30px; font: 12px/1.2 var(--mono); color: var(--ink-2); }
+.ticks span { position: absolute; top: 0; transform: translateX(-50%); white-space: nowrap; }
+.ticks span::before { content: ""; display: block; width: 1px; height: 5px; background: var(--ink-2); margin: 0 auto 2px; }
+.ticks .thr { color: var(--ink); font-weight: 500; }
 
 .tbl-wrap { overflow-x: auto; min-width: 0; }
 table { border-collapse: collapse; width: 100%; font-size: 14px; }
@@ -116,12 +122,14 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
 
 <div class="wrap">
   <header>
-    <div class="eyebrow">Modelled 4G coverage · calibrated to Ofcom drive tests · <a href="index.html">Signal Atlas (measured)</a></div>
+    <div class="eyebrow">Modelled 4G and 5G coverage · terrain from LiDAR · calibrated to Ofcom drive tests · <a href="index.html">Signal Atlas (measured)</a></div>
     <h1>Exeter Coverage Checker</h1>
-    <p>Who can get 4G indoors, and from which operator? Coverage is modelled across Exeter from Ofcom's drive-test readings, then counted against the Census 2021 residents of every address. Pick a neighbourhood or draw your own area.</p>
+    <p>Who can get 4G indoors, or good 5G, and from which operator? Coverage is modelled across Exeter from Ofcom's drive-test readings, with hills and buildings from LiDAR, then counted against the Census 2021 residents of every address. Pick a neighbourhood or draw your own area.</p>
   </header>
 
   <div class="controls" role="group" aria-label="Map and area options">
+    <div class="ctl"><span id="lab-tech">Network</span><div class="seg" id="seg-tech" aria-labelledby="lab-tech"></div></div>
+    <div class="ctl"><span id="lab-view">Show as</span><div class="seg" id="seg-view" aria-labelledby="lab-view"></div></div>
     <div class="ctl"><span id="lab-layer">Map layer</span><div class="seg" id="seg-layer" aria-labelledby="lab-layer"></div></div>
     <div class="ctl"><label for="area">Area</label><select id="area"></select></div>
     <div class="ctl"><span>Draw your own</span><div class="row">
@@ -129,6 +137,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
       <button class="btn" id="finish" type="button" hidden>Finish</button>
     </div></div>
     <div class="ctl"><span>Show</span><div class="row"><button class="btn" id="cells" type="button" aria-pressed="false">Estimated cells</button></div></div>
+    <p class="ctl-note" id="tech-note"></p>
   </div>
 
   <div class="main">
@@ -150,7 +159,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
 
   <section class="panel">
     <h2 id="tbl-h">Residents by modelled 4G coverage</h2>
-    <p>Indoor means a modelled signal of at least −95&nbsp;dBm, enough to reach inside most buildings. Outdoor only is −105 to −95&nbsp;dBm. These are Ofcom's 4G thresholds.</p>
+    <p id="tbl-p"></p>
     <div class="tbl-wrap"><table id="tbl"></table></div>
   </section>
 
@@ -161,7 +170,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   </section>
 
   <section class="panel">
-    <h2>Against Ofcom's own prediction</h2>
+    <h2>Against Ofcom's own prediction (4G)</h2>
     <p>Ofcom's Connected Nations 2025 publishes the operators' own coverage predictions (snapshot 1 July 2025) for Exeter local authority, counted by premises. This model counts residents and uses only open data, so it is the more cautious of the two.</p>
     <div class="cn" id="cn"></div>
   </section>
@@ -170,9 +179,11 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     <h2>How it works</h2>
     <ul>
       <li><b>Cells and masts.</b> Each drive-test reading lists every operator's four strongest cells (PCI and EARFCN) with their RSRP. For each cell, a path-loss curve <code>RSRP = A − 10·n·log10(d)</code> is fitted to its readings, binned to 20&nbsp;m squares, which estimates where its mast is. Positions from road readings are approximate, typically a few hundred metres off.</li>
-      <li><b>Coverage.</b> On a 25&nbsp;m grid, each operator's coverage is its strongest modelled cell, shifted by the operator's median difference from the measurements. Near the roads the remaining measured − modelled difference is spread out over about 150&nbsp;m, so the map matches the drive tests there and follows the model elsewhere.</li>
-      <li><b>Residents.</b> Census 2021 residents were spread to every address (UPRN) in an earlier project; each address takes the modelled coverage of its 25&nbsp;m square.</li>
-      <li><b>Not operator coverage.</b> The model has no terrain, building clutter or antenna patterns, and the drive tests are from 2022–2024. Use it as an estimate from open data, not as an operator's coverage map.</li>
+      <li><b>Hills and buildings.</b> From each mast, rays sample the Environment Agency LiDAR terrain every 20&nbsp;m; a point behind a hill loses signal by knife-edge diffraction, more at 3.5&nbsp;GHz than at 800&nbsp;MHz. Buildings and trees enter as clutter: the mean height of everything within about 150&nbsp;m, with a loss per metre fitted to the drive tests for each operator.</li>
+      <li><b>Coverage.</b> On a 25&nbsp;m grid, each operator's coverage is its strongest modelled cell, shifted by the operator's median difference from the measurements. Near the roads the remaining measured − modelled difference is spread out over about 150&nbsp;m, so the map matches the drive tests there. Away from them a smooth random field (shadow fading, ±4&nbsp;dB for 4G and ±6&nbsp;dB for 5G, mostly shared between operators) stands in for what the LiDAR cannot explain, so coverage thins out unevenly with distance, as it does in reality. It is one fixed draw, not a measurement.</li>
+      <li><b>5G.</b> Most 5G readings are not tied to a cell, so 5G is modelled the way it is rolled out: a 5G cell on each of the operator's estimated masts, at its 5G frequency (EE mostly 700&nbsp;MHz, Three 3.6&nbsp;GHz), calibrated to the measured 5G. O2 and Vodafone 5G was not scanned in Exeter, so theirs is synthetic: 3.5&nbsp;GHz on all their estimated masts, with Three's calibration.</li>
+      <li><b>Residents.</b> Census 2021 residents were spread to every address (UPRN) in an earlier project; each address takes the modelled coverage of its 25&nbsp;m square. This page only holds residents per 25&nbsp;m square, not per address, so a drawn area counts the squares whose centre falls inside it.</li>
+      <li><b>Not operator coverage.</b> Mast positions are estimates, there are no antenna patterns, and the drive tests are from 2022–2024. Use it as an estimate from open data, not as an operator's coverage map.</li>
       <li><b>Validation.</b> One in five 1&nbsp;km squares is held out, the whole model is rebuilt without its readings, and those squares are predicted. Errors are in dB against the measured strongest-cell RSRP.</li>
     </ul>
   </section>
@@ -192,7 +203,14 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   const G = JSON.parse(document.getElementById('geo').textContent);
   const OPS = { '3uk': 'Three', ee: 'EE', o2: 'O2', vf: 'Vodafone' };
   const OPK = Object.keys(OPS);
-  const CLS = ['No coverage', 'Outdoor only', 'Indoor'];
+  const SYNTH = ['o2', 'vf'];
+  const T = {
+    '4G': { cls: ['No coverage', 'Outdoor only', 'Indoor'], top: 'indoor 4G', topShort: 'indoor',
+            thr: ['below −105 dBm', '−105 to −95', '−95 dBm and above'] },
+    '5G': { cls: ['No 5G', 'High confidence', 'Very high confidence'], top: 'very high confidence 5G', topShort: 'very high',
+            thr: ['below −110 dBm', '−110 to −100', '−100 dBm and above'] },
+  };
+  const CLS = () => T[S.tech].cls;
   const cls = (code, i) => Math.floor(code / 3 ** (3 - i)) % 3;
   const indoorCount = code => OPK.reduce((s, _, i) => s + (cls(code, i) === 2), 0);
   const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
@@ -200,22 +218,51 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   const pct = (a, b) => b ? 100 * a / b : NaN;
   const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-  const S = { layer: 'all', area: 'all', cells: false };
+  const S = { tech: '4G', view: 'class', layer: 'all', area: 'all', cells: false };
   try { const s = JSON.parse(localStorage.getItem('ecc-state') || 'null'); if (s) Object.assign(S, s); } catch (e) {}
   if (S.layer !== 'all' && !OPS[S.layer]) S.layer = 'all';
+  if (!T[S.tech]) S.tech = '4G';
+  if (S.view !== 'dbm') S.view = 'class';
   if (S.area === 'draw') S.area = 'all';
-  const save = () => { try { localStorage.setItem('ecc-state', JSON.stringify({ layer: S.layer, area: S.area, cells: S.cells })); } catch (e) {} };
+  const save = () => { try { localStorage.setItem('ecc-state', JSON.stringify({ tech: S.tech, view: S.view, layer: S.layer, area: S.area, cells: S.cells })); } catch (e) {} };
 
-  // Grid: one byte per 25 m pixel, all four operators' classes
-  const Gd = D.grid, raw = atob(Gd.b64), grid = new Uint8Array(raw.length);
-  for (let i = 0; i < raw.length; i++) grid[i] = raw.charCodeAt(i);
+  // Grids: one byte per 25 m pixel, all four operators' classes, per network
+  const GRIDS = {};
+  for (const t in D.grids) {
+    const raw = atob(D.grids[t].b64), g = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) g[i] = raw.charCodeAt(i);
+    GRIDS[t.toUpperCase()] = g;
+  }
+  const Gd = D.grids['4g'];
+  const grid = () => GRIDS[S.tech];
+  const codes = () => A.code[S.tech.toLowerCase()];
   const merc = (lon, lat) => [lon * 20037508.34 / 180, Math.log(Math.tan((90 + lat) * Math.PI / 360)) * 6378137];
   const [gx0, gy0] = merc(Gd.bounds[0], Gd.bounds[1]), [gx1, gy1] = merc(Gd.bounds[2], Gd.bounds[3]);
-  const codeAt = (lon, lat) => {
+  const pixelAt = (lon, lat) => {
     const [x, y] = merc(lon, lat);
     const c = Math.floor((x - gx0) / (gx1 - gx0) * Gd.w), r = Math.floor((gy1 - y) / (gy1 - gy0) * Gd.h);
-    return c < 0 || r < 0 || c >= Gd.w || r >= Gd.h ? 255 : grid[r * Gd.w + c];
+    return c < 0 || r < 0 || c >= Gd.w || r >= Gd.h ? -1 : r * Gd.w + c;
   };
+  const codeAt = (lon, lat) => { const p = pixelAt(lon, lat); return p < 0 ? 255 : grid()[p]; };
+
+  // Signal in dBm per operator and network, decoded once from 8-bit PNGs (1 = -140 dBm ... 101 = -40, 0 = outside)
+  const DBM = {}; let dbmReady = false;
+  const decode = url => new Promise((ok, fail) => {
+    const img = new Image();
+    img.onload = () => {
+      const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height;
+      const ctx = cv.getContext('2d', { willReadFrequently: true }); ctx.drawImage(img, 0, 0);
+      const px = ctx.getImageData(0, 0, img.width, img.height).data, out = new Uint8Array(img.width * img.height);
+      for (let i = 0; i < out.length; i++) out[i] = px[i * 4];
+      ok(out);
+    };
+    img.onerror = fail; img.src = url;
+  });
+  const dbmLoad = Promise.all(Object.entries(D.grids).flatMap(([t, g]) => OPK.map(op => decode(g.dbm[op]).then(a => {
+    (DBM[t.toUpperCase()] ||= {})[op] = a;
+  })))).then(() => { dbmReady = true; if (S.view === 'dbm') render(true); }).catch(() => {});
+  const dbmAt = (op, p) => { const v = DBM[S.tech]?.[op]?.[p]; return v ? v - 141 : NaN; };
+  const RAMP = [-125, -70];
 
   // Addresses
   const A = D.addresses, N = A.lat.length, lon = new Float64Array(N), lat = new Float64Array(N);
@@ -229,21 +276,46 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   function layerImage() {
     const cv = document.createElement('canvas'); cv.width = Gd.w; cv.height = Gd.h;
     const ctx = cv.getContext('2d'), img = ctx.createImageData(Gd.w, Gd.h), P = palette().map(rgb);
-    const oi = OPK.indexOf(S.layer);
-    for (let p = 0; p < grid.length; p++) {
-      const code = grid[p]; if (code === 255) continue;
-      const c = P[S.layer === 'all' ? indoorCount(code) : cls(code, oi)];
-      img.data.set([c[0], c[1], c[2], 255], p * 4);
+    const oi = OPK.indexOf(S.layer), g = grid();
+    if (S.view === 'dbm' && dbmReady) {
+      const stops = ['--s0', '--s1', '--s2', '--s3', '--s4'].map(css).map(rgb), lut = [];
+      for (let v = 0; v <= 101; v++) {
+        const t = Math.min(1, Math.max(0, (v - 141 - RAMP[0]) / (RAMP[1] - RAMP[0]))) * 4, k = Math.min(3, Math.floor(t)), f = t - k;
+        lut.push(stops[k].map((c, j) => Math.round(c + (stops[k + 1][j] - c) * f)));
+      }
+      const layers = S.layer === 'all' ? OPK.map(op => DBM[S.tech][op]) : [DBM[S.tech][S.layer]];
+      for (let p = 0; p < g.length; p++) {
+        let v = 0; for (const a of layers) if (a[p] > v) v = a[p];
+        if (!v) continue;
+        const c = lut[v]; img.data.set([c[0], c[1], c[2], 255], p * 4);
+      }
+    } else {
+      for (let p = 0; p < g.length; p++) {
+        const code = g[p]; if (code === 255) continue;
+        const c = P[S.layer === 'all' ? indoorCount(code) : cls(code, oi)];
+        img.data.set([c[0], c[1], c[2], 255], p * 4);
+      }
     }
     ctx.putImageData(img, 0, 0);
     return cv.toDataURL();
   }
   function legend() {
+    if (S.view === 'dbm') {
+      const st = ['--s0', '--s1', '--s2', '--s3', '--s4'].map(css), [lo, hi] = RAMP, thr = S.tech === '4G' ? [-105, -95] : [-110, -100];
+      const at = v => `${(100 * (v - lo) / (hi - lo)).toFixed(1)}%`;
+      document.getElementById('legend-h').textContent = S.layer === 'all'
+        ? `Best ${S.tech} signal of the four operators (dBm)` : `${OPS[S.layer]} modelled ${S.tech} signal (dBm)${S.tech === '5G' && SYNTH.includes(S.layer) ? ', synthetic' : ''}`;
+      document.getElementById('legend').innerHTML = `<div class="ramp" style="background:linear-gradient(90deg,${st.join(',')})"></div>` +
+        `<div class="ticks">${[lo, ...thr, -80, hi].map(v => `<span class="${thr.includes(v) ? 'thr' : ''}" style="left:${at(v)}">${v < 0 ? '\u2212' : ''}${Math.abs(v)}</span>`).join('')}</div>` +
+        `<div class="lrow"><span></span><span>${S.tech === '4G' ? '\u221295 indoor, \u2212105 outdoor' : '\u2212100 very high, \u2212110 high confidence'} (Ofcom). RSRP${S.tech === '5G' ? ' (SS-RSRP)' : ''} at street level.</span></div>`;
+      return;
+    }
     const P = palette();
+    const t = T[S.tech];
     const labels = S.layer === 'all'
-      ? ['No operator indoors', '1 operator indoors', '2 operators indoors', '3 operators indoors', 'All 4 operators indoors']
-      : ['No coverage (below −105 dBm)', 'Outdoor only (−105 to −95)', 'Indoor (−95 dBm and above)'];
-    document.getElementById('legend-h').textContent = S.layer === 'all' ? 'Operators with indoor 4G' : `${OPS[S.layer]} modelled 4G`;
+      ? ['No operator', '1 operator', '2 operators', '3 operators', 'All 4 operators']
+      : t.cls.map((c, i) => `${c} (${t.thr[i]})`);
+    document.getElementById('legend-h').textContent = S.layer === 'all' ? `Operators with ${t.top}` : `${OPS[S.layer]} modelled ${S.tech}${S.tech === '5G' && SYNTH.includes(S.layer) ? ' (synthetic)' : ''}`;
     document.getElementById('legend').innerHTML = labels.map((l, i) =>
       `<div class="lrow"><span class="sw" style="background:${P[i]};opacity:.75"></span><span>${l}</span></div>`).join('');
   }
@@ -282,10 +354,10 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   };
 
   function stats(idx) {
-    const r = { res: 0, addr: idx.length, op: OPK.map(() => [0, 0, 0]), count: [0, 0, 0, 0, 0] };
+    const r = { res: 0, addr: 0, op: OPK.map(() => [0, 0, 0]), count: [0, 0, 0, 0, 0] }, cd = codes();
     for (const i of idx) {
-      const p = A.pop[i], c = A.code[i];
-      r.res += p;
+      const p = A.pop[i], c = cd[i];
+      r.res += p; r.addr += A.n[i];
       OPK.forEach((_, o) => { r.op[o][cls(c, o)] += p; });
       r.count[indoorCount(c)] += p;
     }
@@ -297,7 +369,7 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   let map = null, ready = false, imgUrl = null;
   const zw = (a, b) => ['interpolate', ['exponential', 1.6], ['zoom'], 11, a, 17, b];
   const B = Gd.bounds, corners = [[B[0], B[3]], [B[2], B[3]], [B[2], B[1]], [B[0], B[1]]];
-  const cellsGeo = () => ({ type: 'FeatureCollection', features: OPK.flatMap(op => (D.cells[op] || []).map(p => ({ type: 'Feature', properties: { op }, geometry: { type: 'Point', coordinates: p } }))) });
+  const cellsGeo = () => ({ type: 'FeatureCollection', features: OPK.flatMap(op => (D.cells[S.tech.toLowerCase()][op] || []).map(p => ({ type: 'Feature', properties: { op }, geometry: { type: 'Point', coordinates: p } }))) });
   const drawnGeo = () => drawn.length < 2 ? { type: 'FeatureCollection', features: [] } : {
     type: 'FeatureCollection', features: [{ type: 'Feature', properties: {}, geometry: drawing
       ? { type: 'LineString', coordinates: drawn } : { type: 'Polygon', coordinates: [[...drawn, drawn[0]]] } }] };
@@ -349,7 +421,11 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
       if (drawing) { tip.hidden = true; return; }
       const code = codeAt(ev.lngLat.lng, ev.lngLat.lat);
       if (code === 255) { tip.hidden = true; return; }
-      tip.innerHTML = OPK.map((op, i) => `<b>${OPS[op]}</b> ${CLS[cls(code, i)].toLowerCase()}`).join('<br>');
+      const pix = pixelAt(ev.lngLat.lng, ev.lngLat.lat);
+      tip.innerHTML = `<b>${S.tech}</b><br>` + OPK.map((op, i) => {
+        const v = dbmAt(op, pix);
+        return `<b>${OPS[op]}</b> ${Number.isFinite(v) ? (v < 0 ? '\u2212' : '') + Math.abs(v) + ' dBm · ' : ''}${CLS()[cls(code, i)].toLowerCase().replace('5g', '5G')}`;
+      }).join('<br>');
       tip.hidden = false;
       const bw = mapEl.clientWidth, bh = mapEl.clientHeight;
       let tx = ev.point.x + 14, ty = ev.point.y + 14;
@@ -400,16 +476,20 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
     const all4 = pct(r.count[4], r.res), any = pct(r.res - r.count[0], r.res);
     document.getElementById('stats').innerHTML = [
       [fmt(r.res), '', 'residents (Census 2021)'], [fmt(r.addr), '', 'addresses with residents'],
-      [fmt(all4, 1), '%', 'indoor 4G from all four operators'], [fmt(any, 1), '%', 'indoor 4G from at least one'],
+      [fmt(all4, 1), '%', `${T[S.tech].top} from all four operators`], [fmt(any, 1), '%', `${T[S.tech].top} from at least one`],
     ].map(([v, u, k]) => `<div class="stat"><div class="v">${v}${u ? `<small>${u}</small>` : ''}</div><div class="k">${k}</div></div>`).join('');
-    document.getElementById('mapcount').textContent = S.area === 'all' ? '' : `${fmt(r.addr)} addresses selected`;
+    document.getElementById('mapcount').textContent = S.area === 'all' ? '' : `${fmt(r.addr)} addresses in ${fmt(selIdx.length)} squares of 25 m`;
     const P = ['--s4', '--s3', '--s0'].map(css);
-    document.getElementById('tbl-h').textContent = `Residents by modelled 4G coverage · ${areaName()}`;
+    const t = T[S.tech];
+    document.getElementById('tbl-h').textContent = `Residents by modelled ${S.tech} coverage · ${areaName()}`;
+    document.getElementById('tbl-p').textContent = S.tech === '4G'
+      ? 'Indoor means a modelled signal of at least −95 dBm, enough to reach inside most buildings. Outdoor only is −105 to −95 dBm. These are Ofcom’s 4G thresholds.'
+      : 'Ofcom’s 5G thresholds for outdoor coverage: very high confidence at −100 dBm (SS-RSRP) or more, high confidence from −110 dBm. O2 and Vodafone 5G is synthetic.';
     document.getElementById('tbl').innerHTML =
-      '<thead><tr><th>Operator</th><th>Indoor</th><th>Outdoor only</th><th>No coverage</th><th>Residents indoor</th><th></th></tr></thead><tbody>' +
+      `<thead><tr><th>Operator</th><th>${t.cls[2]}</th><th>${t.cls[1]}</th><th>${t.cls[0]}</th><th>Residents ${t.topShort}</th><th></th></tr></thead><tbody>` +
       OPK.map((op, o) => {
         const [none, out, ind] = r.op[o];
-        return `<tr><td><span class="opn"><span class="dot" style="background:var(--op-${op})"></span>${OPS[op]}</span></td>` +
+        return `<tr><td><span class="opn"><span class="dot" style="background:var(--op-${op})"></span>${OPS[op]}${S.tech === '5G' && SYNTH.includes(op) ? ' <em style="color:var(--muted);font-style:normal">synthetic</em>' : ''}</span></td>` +
           `<td>${fmt(pct(ind, r.res), 1)}%</td><td>${fmt(pct(out, r.res), 1)}%</td><td>${fmt(pct(none, r.res), 1)}%</td><td>${fmt(ind)}</td>` +
           `<td><div class="bar" aria-hidden="true"><i style="width:${pct(ind, r.res)}%;background:${P[0]}"></i><i style="width:${pct(out, r.res)}%;background:${P[1]}"></i><i style="width:${pct(none, r.res)}%;background:${P[2]}"></i></div></td></tr>`;
       }).join('') + '</tbody>';
@@ -417,26 +497,26 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
 
   function csv() {
     if (!last) return;
-    const r = last, rows = [['area', 'operator', 'coverage', 'residents', 'percent']];
-    OPK.forEach((op, o) => [2, 1, 0].forEach(k => rows.push([areaName(), OPS[op], CLS[k].toLowerCase(), r.op[o][k], pct(r.op[o][k], r.res).toFixed(2)])));
-    r.count.forEach((v, k) => rows.push([areaName(), `${k} of 4 operators`, 'indoor', v, pct(v, r.res).toFixed(2)]));
-    const meta = ['# Exeter Coverage Checker: modelled 4G coverage from Ofcom drive tests (not operator data)',
-      `# residents: ${r.res}; addresses: ${r.addr}; thresholds: indoor >= -95 dBm, outdoor >= -105 dBm`];
+    const r = last, rows = [['area', 'network', 'operator', 'coverage', 'residents', 'percent']];
+    OPK.forEach((op, o) => [2, 1, 0].forEach(k => rows.push([areaName(), S.tech, OPS[op] + (S.tech === '5G' && SYNTH.includes(op) ? ' (synthetic)' : ''), CLS()[k].toLowerCase(), r.op[o][k], pct(r.op[o][k], r.res).toFixed(2)])));
+    r.count.forEach((v, k) => rows.push([areaName(), S.tech, `${k} of 4 operators`, T[S.tech].topShort, v, pct(v, r.res).toFixed(2)]));
+    const meta = [`# Exeter Coverage Checker: modelled ${S.tech} coverage from Ofcom drive tests and LiDAR terrain (not operator data)`,
+      `# residents: ${r.res}; addresses: ${r.addr}; thresholds: ${S.tech === '4G' ? 'indoor >= -95 dBm, outdoor >= -105 dBm' : 'very high confidence >= -100 dBm, high >= -110 dBm (SS-RSRP)'}`];
     if (S.area === 'draw') meta.push(`# drawn area (lon lat): ${drawn.map(p => p.map(v => v.toFixed(5)).join(' ')).join(', ')}`);
     const text = meta.join('\n') + '\n' + rows.map(r => r.map(v => /[",\n]/.test(String(v)) ? `"${String(v).replace(/"/g, '""')}"` : v).join(',')).join('\n') + '\n';
     const a = document.createElement('a');
     a.href = URL.createObjectURL(new Blob([text], { type: 'text/csv' }));
-    a.download = `coverage_${areaName().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}.csv`;
+    a.download = `coverage_${S.tech.toLowerCase()}_${areaName().toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')}.csv`;
     a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
   }
 
   function evidence() {
     const V = D.validation.filter(v => v.prediction === 'model + correction');
+    const ex = D.summary.find(s => s.area === 'Exeter' && s.network === '4G');
     const rm = V.map(v => v.rmse_db);
     document.getElementById('val-p').textContent = `Held-out 1 km squares, predicted without their own readings. With the road correction, typical errors are ${fmt(Math.min(...rm), 0)}–${fmt(Math.max(...rm), 0)} dB (RMSE); tuned propagation models usually reach 8–10 dB. "Same class" is how often the model puts a 20 m square in the same coverage class as the measurement.`;
-    document.getElementById('val').innerHTML = '<thead><tr><th>Operator</th><th>Prediction</th><th>Squares</th><th>Bias dB</th><th>MAE dB</th><th>RMSE dB</th><th>Same class</th></tr></thead><tbody>' +
-      D.validation.map(v => `<tr><td>${esc(v.operator)}</td><td>${esc(v.prediction)}</td><td>${fmt(v.squares_20m)}</td><td>${fmt(v.bias_db, 1)}</td><td>${fmt(v.mae_db, 1)}</td><td>${fmt(v.rmse_db, 1)}</td><td>${fmt(v.class_agreement_pct, 0)}%</td></tr>`).join('') + '</tbody>';
-    const ex = D.summary.find(s => s.area === 'Exeter');
+    document.getElementById('val').innerHTML = '<thead><tr><th>Operator</th><th>Network</th><th>Prediction</th><th>Squares</th><th>Bias dB</th><th>MAE dB</th><th>RMSE dB</th><th>Same class</th></tr></thead><tbody>' +
+      D.validation.map(v => `<tr><td>${esc(v.operator)}</td><td>${esc(v.network)}</td><td>${esc(v.prediction)}</td><td>${fmt(v.squares_20m)}</td><td>${fmt(v.bias_db, 1)}</td><td>${fmt(v.mae_db, 1)}</td><td>${fmt(v.rmse_db, 1)}</td><td>${fmt(v.class_agreement_pct, 0)}%</td></tr>`).join('') + '</tbody>';
     document.getElementById('cn').innerHTML = [
       ['96.5', '%', 'of premises with indoor 4G from all four operators (Ofcom)'],
       [fmt(ex['indoor from all 4 %'], 1), '%', 'of residents with indoor 4G from all four operators (this model)'],
@@ -446,8 +526,24 @@ td .opn { display: inline-flex; align-items: center; gap: 8px; }
   }
 
   function seg() {
+    const et = document.getElementById('seg-tech'); et.innerHTML = '';
+    for (const v of ['4G', '5G']) {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = v;
+      b.setAttribute('aria-pressed', String(S.tech === v));
+      b.onclick = () => { S.tech = v; render(true); };
+      et.append(b);
+    }
+    document.getElementById('tech-note').textContent = S.tech === '5G'
+      ? 'O2 and Vodafone 5G were not scanned in Exeter: their 5G here is synthetic.' : '';
+    const ev = document.getElementById('seg-view'); ev.innerHTML = '';
+    for (const [v, l] of [['class', 'Coverage class'], ['dbm', 'Signal (dBm)']]) {
+      const b = document.createElement('button'); b.type = 'button'; b.textContent = l;
+      b.setAttribute('aria-pressed', String(S.view === v));
+      b.onclick = () => { S.view = v; render(true); };
+      ev.append(b);
+    }
     const el = document.getElementById('seg-layer'); el.innerHTML = '';
-    for (const [v, l] of [['all', 'All four'], ...Object.entries(OPS)]) {
+    for (const [v, l] of [['all', S.view === 'dbm' ? 'Best of four' : 'All four'], ...Object.entries(OPS)]) {
       const b = document.createElement('button'); b.type = 'button';
       if (v !== 'all') { const d = document.createElement('span'); d.className = 'dot'; d.style.background = `var(--op-${v})`; b.append(d); }
       b.append(l); b.setAttribute('aria-pressed', String(S.layer === v));

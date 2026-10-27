@@ -7,3 +7,4 @@ pyproj>=3.6
 rasterio>=1.4
 scipy>=1.13
 scikit-learn>=1.5
+pillow>=10
