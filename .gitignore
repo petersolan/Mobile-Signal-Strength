@@ -10,6 +10,11 @@ data/derived/*
 !data/derived/coverage_cells.csv
 !data/derived/coverage_summary.csv
 !data/derived/coverage_validation.csv
+!data/derived/coverage_match.csv
+!data/derived/gap_*.csv
+!data/derived/lsoa_demographics.csv
+!data/derived/opportunity_msoa.csv
+!data/derived/site_*.csv
 
 # Python
 __pycache__/
