@@ -1,7 +1,8 @@
-# Exeter Signal Atlas and Coverage Checker
+# Exeter Signal Atlas, Coverage Checker and Network Business Case
 
-Measured 4G and 5G signal strength on Exeter's roads from Ofcom's open drive-test data, and a coverage model built from it: masts estimated from the measurements, hills from LiDAR, calibrated and validated against the drive tests, and counted against every resident's address.
+Measured 4G and 5G signal strength on Exeter's roads from Ofcom's open drive-test data, a coverage model built from it (masts estimated from the measurements, hills from LiDAR, calibrated and validated against the drive tests, counted against every resident's address), and a business case on top: where each operator loses customers to its rivals on indoor coverage, which gaps matter most, and which new sites would pay back.
 
+- **[Business case](#business-case-coverage-gaps-opportunities-and-where-to-build)**: competitive gaps per neighbourhood, opportunity scoring with Census 2021, and a costed site plan per operator with break-even and sensitivity.
 - **[Coverage checker](https://petersolan.github.io/Mobile-Signal-Strength/coverage.html)**: modelled 4G and 5G per operator, as coverage classes or dBm; residents with indoor 4G or good 5G in any area you pick or draw, with CSV export. [How it works](#coverage-checker-modelled).
 - **[Signal Atlas](https://petersolan.github.io/Mobile-Signal-Strength/)**: the measurements themselves; switch network, operator and year, flat or in 3D.
 
@@ -10,6 +11,92 @@ Measured 4G and 5G signal strength on Exeter's roads from Ofcom's open drive-tes
 *EE 4G, all survey years: each column is a 100 m square, its height and colour the median signal. Contains Ofcom data (OGL v3). Basemap © OpenStreetMap contributors.*
 
 The map shows readings from Ofcom's Spectrum Assurance vans, taken during their regular work, for Three, EE, O2 and Vodafone in 2022, 2023 and 2024. Readings are binned to 100 m squares on the Ordnance Survey grid. You can switch between 4G and 5G, operator and survey year, view the squares flat or as 3D columns, and compare each operator against Ofcom's coverage thresholds.
+
+## Business case: coverage gaps, opportunities and where to build
+
+The coverage model answers *where is there signal*. This part answers the questions an operator's network and commercial teams ask next: **where are we losing customers to rivals, which of those places matter most, and what would it cost to fix them?** It covers Exeter and its edges (152,419 residents at 72,647 addresses, 21 neighbourhoods) for the three UK networks after the Vodafone-Three merger: **EE, VMO2 and VodafoneThree** (the better of the Vodafone and Three signals at each address, as the two networks are being combined).
+
+![Per operator: addresses where a rival has indoor 4G and the operator does not, and the recommended new sites](docs/images/business_case.png)
+
+*Bias-corrected scenario. Each dot is an address where a rival gives indoor 4G and the operator does not; stars are the recommended sites in build order, dark where they break even below the operator's ~30% market share. Basemap © OpenStreetMap contributors.*
+
+### Findings
+
+1. **VMO2 is the most exposed.** 9,400 to 22,900 residents have indoor 4G from a rival but not from VMO2, and almost nobody (84 to 380) has indoor 4G from VMO2 alone. A site at the **University or in Central Exeter pays back in both scenarios**, needing 5-11% of the customers it brings indoor coverage to, against a fair share of about 30%. **Recommendation: build.**
+2. **EE's case depends on the model's bias.** As modelled, its best sites (Pinhoe & Whipton North, the University, Central Exeter) need 36-111% of the customers they cover, which is marginal at best; bias-corrected, the same places need 12-22%. **Recommendation: a targeted drive test in those three areas (a day of measurement) before committing about £450k.** It settles which scenario is right for a fraction of the cost.
+3. **VodafoneThree should not build for coverage.** Its gaps are small and scattered: its one candidate, Exwick & Foxhayes, fails as modelled (56%) and passes only if the bias correction holds (25%). Its opportunity is commercial: **2,000 to 5,200 residents get indoor 4G only from VodafoneThree**, where marketing rather than masts wins customers. Combining the two networks adds indoor 4G for 1,000 to 2,800 residents over Vodafone alone.
+4. **The University area is the prize.** Half its residents are full-time students (Census 2021): heavy data users who choose a network every September. Once customers are weighted by value, it tops VMO2's opportunity list in both scenarios and EE's as modelled.
+
+### Method
+
+1. **Competitive gaps** (`scripts/gap_analysis.py`). Each address is classed for indoor 4G (Ofcom's -95 dBm) per operator. Per neighbourhood (MSOA): the share of residents with indoor 4G, the gap to the best rival, residents **at risk** (a rival covers them indoors, the operator does not) and residents **only this operator** covers. Indoor 4G only: the 5G model is measured for EE and Three alone, so 5G is left out of the comparison.
+2. **Opportunity scoring** (`scripts/fetch_demographics.py`, `scripts/opportunity.py`). Census 2021 from the Nomis API (TS066 economic activity, TS007A age) per LSOA. **Customers** are adult residents; their **value** is the share employed or in full-time education, relative to the area average (the data-heavy, mostly pay-monthly customers). Two plays per operator: **defend** (at-risk customers: fix coverage) and **attack** (customers only it covers: market there), each scored as customers x value.
+3. **Site plan** (`scripts/site_plan.py`). A new site is modelled like the operator's existing cells: terrain diffraction over the LiDAR surface, the operator's clutter loss and calibration, the median power and slope of its 4G cells below 1 GHz, which in Exeter are 800 MHz (LTE Band 20, the band that carries indoor coverage), a 25 m mast. Higher bands (1.8, 2.1 and 2.6 GHz) lose 7-10 dB more before walls and hills, so they add capacity rather than reach indoor not-spots. Candidates sit on a 250 m grid near at-risk customers; five sites per operator are chosen greedily by value-weighted customers gained, so each next site only counts what the earlier ones did not cover.
+4. **Break-even.** No public data says how many newly covered people switch or stay, so instead of guessing it each site gets the number it must win or keep to pay back in 5 years, as a share of the customers it covers. Below the operator's fair share (~30%) is plausible; above it, the site needs more than coverage to justify it.
+
+### Results
+
+**Indoor 4G and residents at risk**, as modelled / bias-corrected (see [Model vs drive tests](#model-vs-drive-tests)):
+
+| Operator | Indoor 4G | At risk: a rival covers them indoors, the operator does not | Only this operator covers them indoors |
+|---|---|---|---|
+| EE | 95.6% / 83.2% | 5,935 / 23,189 | 1,049 / 2,355 |
+| VMO2 | 93.3% / 83.4% | 9,429 / 22,932 | 84 / 380 |
+| VodafoneThree | 98.2% / 95.7% | 1,964 / 4,207 | 1,953 / 5,221 |
+| *Vodafone before the merger* | *97.5% / 93.8%* | *2,959 / 6,765* | *1,924 / 4,967* |
+
+No operator gives indoor 4G to 795 / 2,374 residents, mostly at the rural edges.
+
+**Opportunities**: adult customers to defend and to attack, as modelled / bias-corrected:
+
+| Operator | Defend (customers) | Attack (customers) | Top defend areas |
+|---|---|---|---|
+| EE | 5,120 / 19,736 | 864 / 1,908 | Pennsylvania & University; Central Exeter; Pinhoe & Whipton North |
+| VMO2 | 8,419 / 19,900 | 72 / 335 | Pennsylvania & University; Central Exeter; Exwick & Foxhayes |
+| VodafoneThree | 1,615 / 3,454 | 1,795 / 4,716 | Exwick & Foxhayes |
+
+**Recommended sites**: the places that come out in both scenarios (within about 500 m), the customers each would bring indoor coverage to (as modelled / bias-corrected), and the share of them it must win or keep to pay back in 5 years:
+
+| Operator | Site area | Customers covered | Break-even share, as modelled | Break-even share, bias-corrected |
+|---|---|---|---|---|
+| VMO2 | Pennsylvania & University | 5,404 / 1,568 | **10.5%** (1st) | 36.1% (4th) |
+| VMO2 | Central Exeter | 603 / 10,729 | 93.9% (3rd) | **5.3%** (1st) |
+| VMO2 | Countess Wear & Topsham | 1,472 / 3,035 | 38.5% | **18.7%** |
+| EE | Pinhoe & Whipton North | 1,404 / 4,748 | 40.3% | **11.9%** |
+| EE | Pennsylvania & University | 1,588 / 2,634 | 35.7% | **21.5%** |
+| EE | Central Exeter | 508 / 3,727 | 111.5% | **15.2%** |
+| VodafoneThree | Exwick & Foxhayes | 1,014 / 2,284 | 55.9% | **24.8%** |
+
+VMO2's University and Central Exeter sites overlap: whichever is built first takes most of the other's customers, so one of the two is the build in either scenario. The full lists are in `data/derived/site_plan.csv`.
+
+**Assumptions and sensitivity.** ARPU £13.24 a month (Ofcom, all UK mobile subscribers, Q4 2025), a 50% margin after the cost of serving a subscriber (an assumption), £150k to build a macro site (Ofcom's cost model, £105k in 2007/08 prices, inflated; government-funded rural masts have cost about £478k) and 10% of that a year to run it. Subscribers a site must win or keep to pay back in 5 years:
+
+| Site cost | ARPU £10 | ARPU £13.24 | ARPU £18 |
+|---|---|---|---|
+| £100k | 500 | 378 | 278 |
+| £150k | 750 | **566** | 417 |
+| £300k | 1,500 | 1,133 | 833 |
+
+VMO2's first site stays within the operator's fair share even at £300k and £10 ARPU (1,500 of 5,404 or 10,729 customers covered).
+
+### Model vs drive tests
+
+Does the modelled coverage match the measurements? On the held-out 1 km squares of the validation below (the model refitted without them), the share of 20 m road squares with indoor-level 4G (`scripts/coverage_match.py`):
+
+| Operator | Measured | Modelled | Same coverage class | Model better than measured | Model worse |
+|---|---|---|---|---|---|
+| EE | 87.6% | 98.4% | 87% | 12% | 1% |
+| O2 (VMO2) | 80.7% | 89.4% | 80% | 15% | 6% |
+| Vodafone | 85.5% | 84.0% | 81% | 9% | 10% |
+| Three | 65.5% | 73.6% | 78% | 15% | 7% |
+
+The model gets the class right in 78-87% of places it has not seen, but it overstates indoor coverage by 8-11 points for EE, O2 and Three: it reproduces the typical signal, not the deepest shadows behind hills and buildings. So every result above is given twice: **as modelled**, and **bias-corrected**, with each operator's 4G lowered by its mean error on the held-out areas (EE 6.3 dB, Three 4.8, O2 4.8, Vodafone 3.9). As modelled, the gaps are lower bounds; the bias-corrected figures sit closer to the drive tests. The two scenarios agree on where to build and on the order of the operators; they differ on how much is at stake.
+
+### Limits
+
+- Coverage is modelled from 2022-2024 drive tests on public roads, with estimated mast positions and no antenna patterns; it is an estimate from open data, not an operator's coverage map.
+- Market share and ARPU are national figures; there is no public local data. The margin is an assumption. New sites are modelled as one 4G 800 MHz site with the operator's median cell, without the random shadow fading of the coverage grid, so customers gained are upper estimates. Capacity, 5G and fixed wireless are not included.
+- Census 2021 counts students at their term-time address, which is what this question needs. Some edge neighbourhoods are only partly inside the study area.
 
 ## What the data shows
 
@@ -67,8 +154,8 @@ With the road correction; the model alone is 16–20 dB RMSE. Tuned propagation 
 | Operator | 4G indoor | 4G outdoor only | 5G very high confidence | 5G high | No 5G |
 |---|---|---|---|---|---|
 | EE | 96.6% | 3.3% | 85.0% | 13.5% | 1.5% |
-| Vodafone | 98.1% | 1.8% | 25.1%* | 34.8%* | 40.1%* |
-| VMO2 | 94.1% | 5.2% | 32.6%* | 26.0%* | 41.4%* |
+| Vodafone | 98.1% | 1.8% | 26.4%* | 35.7%* | 37.8%* |
+| VMO2 | 94.1% | 5.2% | 33.9%* | 26.3%* | 39.8%* |
 
 \* synthetic 5G.
 
@@ -90,10 +177,16 @@ scripts/
   propagation.py       terrain rays and knife-edge diffraction
   extract_addresses.py Census 2021 residents per address in the study area
   build_coverage.py    coverage grids per operator, held-out validation, residents per class
+  coverage_match.py    held-out coverage classes, measured vs modelled
+  gap_analysis.py      competitive gaps per neighbourhood and operator, two scenarios
+  fetch_demographics.py  Census 2021 profile per LSOA from the Nomis API
+  opportunity.py       defend / attack customers, weighted by value
+  site_plan.py         new sites per operator, greedy choice, break-even and sensitivity
 viz/
   atlas.template.html  the Signal Atlas page (MapLibre GL JS 4.7.1)
   build_page.py        inlines the data and stylesheet into docs/index.html
   coverage.template.html, build_coverage_page.py   the coverage checker, docs/coverage.html
+  build_business_case_map.py                       the business case map, docs/images/business_case.png
 data/derived/          committed outputs (see below)
 docs/                  the built site, served by GitHub Pages
 ```
@@ -116,6 +209,14 @@ python scripts/extract_addresses.py
 python scripts/prepare_surface.py     # needs the Exeter 3D City Model LiDAR tiles, see scripts/config.py
 python scripts/build_coverage.py      # ~10 minutes, including the validation
 python viz/build_coverage_page.py     # writes docs/coverage.html
+
+# business case (after the coverage checker)
+python scripts/coverage_match.py      # ~5 minutes
+python scripts/gap_analysis.py
+python scripts/fetch_demographics.py  # Census 2021 from the Nomis API
+python scripts/opportunity.py
+python scripts/site_plan.py           # ~10 minutes
+python viz/build_business_case_map.py
 ```
 
 `scripts/estimate_cells.py` on its own writes the fitted cells and grouped sites as GeoPackages for QGIS.
@@ -134,6 +235,11 @@ To study another area, change `BBOX` in `scripts/config.py`. Check that `RELEASE
 | `data/derived/coverage_cells.csv` | modelled 4G cells and 5G sites: estimated position, antenna height, frequency, A and n |
 | `data/derived/coverage_validation.csv` | held-out errors per operator, model only and with the road correction |
 | `data/derived/coverage_summary.csv` | residents per modelled coverage class by network and local authority |
+| `data/derived/coverage_match.csv` | held-out road squares per 4G coverage class, measured and modelled, per operator |
+| `data/derived/gap_msoa.csv`, `gap_summary.csv` | indoor 4G, gap to the best rival, residents at risk and only-operator residents, per scenario, MSOA and operator |
+| `data/derived/lsoa_demographics.csv` | Census 2021 adults, employed, full-time students and retired per LSOA |
+| `data/derived/opportunity_msoa.csv` | defend and attack customers and scores per scenario, MSOA and operator |
+| `data/derived/site_plan.csv`, `site_sensitivity.csv` | recommended sites per operator and scenario with customers gained and break-even; break-even by site cost and ARPU |
 
 ## Data sources and licences
 
@@ -143,6 +249,8 @@ Contains public sector information licensed under the [Open Government Licence v
 - **Ofcom**, [Connected Nations 2025](https://www.ofcom.org.uk/phones-and-broadband/coverage-and-speeds/connected-nations-2025/data-downloads-2025): predicted coverage for Exeter local authority (E07000041), quoted on the page for comparison.
 - **Environment Agency** LiDAR composite DTM and first-return DSM, 1 m (OGL), for terrain and clutter.
 - **ONS** Census 2021 and ONS UPRN Directory, via residents per address prepared in the Census-distribution project (OGL; contains OS data © Crown copyright and database right). **House of Commons Library** [MSOA names](https://houseofcommonslibrary.github.io/msoanames/) (OGL).
+- **ONS** Census 2021 tables TS066 (economic activity) and TS007A (age) per LSOA, from the [Nomis API](https://www.nomisweb.co.uk/) (OGL).
+- Business case figures: Ofcom's average mobile revenue per subscriber, Q4 2025 (as reported by [TelecomLead](https://telecomlead.com/?p=125511)); Ofcom's spectrum liberalisation [cost model](https://www.ofcom.org.uk/siteassets/resources/documents/consultations/uncategorised/8403-spectrumlib/summary/annexes/annex15.pdf) for site capex and opex; the DCMS [Mobile Infrastructure Project report](https://assets.publishing.service.gov.uk/media/5a82eb5aed915d74e62384b3/MIP_Impact_and_Benefits_Report.pdf) for the cost of government-funded masts.
 - **OpenStreetMap** basemap, © [OpenStreetMap contributors](https://www.openstreetmap.org/copyright). The simplified basemap in `data/derived/exeter_map.json` is a derivative database and is available under the [Open Database Licence](https://opendatacommons.org/licenses/odbl/1-0/).
 - **MapLibre GL JS** renders the map. Its stylesheet is included under BSD-3-Clause; see `viz/MAPLIBRE-LICENSE.txt`.
 

@@ -1,0 +1,9 @@
+scenario,operator,residents,indoor,at_risk,advantage,indoor_pct,not_spot
+modelled,EE,152419,145689,5935,1049,95.6,795
+modelled,VMO2,152419,142195,9429,84,93.3,795
+modelled,VodafoneThree,152419,149660,1964,1953,98.2,795
+modelled,Vodafone,152419,148636,2959,1924,97.5,795
+bias-corrected,EE,152419,126856,23189,2355,83.2,2374
+bias-corrected,VMO2,152419,127113,22932,380,83.4,2374
+bias-corrected,VodafoneThree,152419,145838,4207,5221,95.7,2374
+bias-corrected,Vodafone,152419,143026,6765,4967,93.8,2374

@@ -1,0 +1,5 @@
+operator,squares_20m,measured_none_pct,modelled_none_pct,measured_outdoor_only_pct,modelled_outdoor_only_pct,measured_indoor_pct,modelled_indoor_pct,same_class_pct,model_better_pct,model_worse_pct
+Three,708,4.0,4.1,30.5,22.3,65.5,73.6,77.7,15.0,7.3
+EE,707,0.3,0.0,12.2,1.6,87.6,98.4,87.1,11.9,1.0
+O2,706,0.7,0.0,18.6,10.6,80.7,89.4,79.5,14.6,5.9
+Vodafone,711,1.0,0.0,13.5,16.0,85.5,84.0,81.0,8.9,10.1

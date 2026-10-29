@@ -1,0 +1,31 @@
+operator,rank,x,y,msoa_name,residents,customers,defend_customers,value_score,scenario,break_even_subs,break_even_pct,lon,lat
+EE,1,291601.0,94334.0,Pennsylvania & University,1655,1588,1549,2093.0,modelled,566,35.7,-3.53755,50.73847
+EE,2,295601.0,93584.0,Pinhoe & Whipton North,1766,1404,1404,1304.6,modelled,566,40.3,-3.48067,50.73246
+EE,3,299351.0,84834.0,"Clyst, Exton & Lympstone",1147,967,700,845.2,modelled,566,58.6,-3.42517,50.65446
+EE,4,291851.0,92584.0,Central Exeter,545,508,427,552.9,modelled,566,111.5,-3.5335,50.72278
+EE,5,288351.0,97834.0,"Morchard Bishop, Copplestone & Newton St Cyres",451,380,106,322.7,modelled,566,149.1,-3.58465,50.76931
+EE,1,295851.0,93584.0,Pinhoe & Whipton North,5968,4748,4748,4377.1,bias-corrected,566,11.9,-3.47713,50.7325
+EE,2,292101.0,92834.0,Central Exeter,4050,3727,3616,4103.6,bias-corrected,566,15.2,-3.53003,50.72508
+EE,3,291101.0,94584.0,Pennsylvania & University,2754,2634,2340,3456.6,bias-corrected,566,21.5,-3.54471,50.74062
+EE,4,294601.0,93834.0,Heavitree East & Whipton South,1842,1468,1468,1293.8,bias-corrected,566,38.6,-3.49491,50.73453
+EE,5,291351.0,92084.0,Central Exeter,1516,1307,1266,1193.1,bias-corrected,566,43.3,-3.54043,50.7182
+VMO2,1,290070.0,93084.0,Pennsylvania & University,5968,5404,5369,6354.5,modelled,566,10.5,-3.55887,50.72694
+VMO2,2,297320.0,86334.0,Countess Wear & Topsham,1646,1472,1189,1252.7,modelled,566,38.5,-3.45431,50.66759
+VMO2,3,291570.0,93084.0,Central Exeter,650,603,522,659.8,modelled,566,93.9,-3.53762,50.72723
+VMO2,4,297570.0,91084.0,"Clyst, Exton & Lympstone",600,501,500,441.2,modelled,566,113.1,-3.45209,50.71034
+VMO2,5,289320.0,99334.0,"Morchard Bishop, Copplestone & Newton St Cyres",570,481,207,409.2,modelled,566,117.8,-3.57137,50.78298
+VMO2,1,291570.0,93084.0,Central Exeter,12191,10729,10223,11771.7,bias-corrected,566,5.3,-3.53762,50.72723
+VMO2,2,297070.0,86584.0,Countess Wear & Topsham,3429,3035,2481,2517.1,bias-corrected,566,18.7,-3.45791,50.66979
+VMO2,3,295320.0,91584.0,Middlemoor & Sowton,2943,2416,2381,2446.9,bias-corrected,566,23.4,-3.48408,50.71443
+VMO2,4,290070.0,93334.0,Pennsylvania & University,1741,1568,1440,1862.2,bias-corrected,566,36.1,-3.55894,50.72919
+VMO2,5,291820.0,92584.0,Central Exeter,888,770,721,768.1,bias-corrected,566,73.6,-3.53393,50.72278
+VodafoneThree,1,289820.0,93114.0,Exwick & Foxhayes,1246,1014,994,1022.5,modelled,566,55.9,-3.56242,50.72717
+VodafoneThree,2,288320.0,98114.0,"Morchard Bishop, Copplestone & Newton St Cyres",453,382,108,324.0,modelled,566,148.3,-3.58518,50.77182
+VodafoneThree,3,298320.0,86114.0,"Clyst, Exton & Lympstone",320,293,7,295.8,modelled,566,193.3,-3.4401,50.66579
+VodafoneThree,4,291570.0,93114.0,Central Exeter,153,136,55,136.8,modelled,566,416.5,-3.53763,50.7275
+VodafoneThree,5,299320.0,89614.0,"Clyst, Exton & Lympstone",152,129,128,105.9,modelled,566,439.1,-3.42691,50.69743
+VodafoneThree,1,290570.0,93614.0,Exwick & Foxhayes,2777,2284,1834,2405.1,bias-corrected,566,24.8,-3.55194,50.7318
+VodafoneThree,2,298570.0,86114.0,"Clyst, Exton & Lympstone",657,602,44,607.3,bias-corrected,566,94.1,-3.43656,50.66583
+VodafoneThree,3,289820.0,92614.0,Exwick & Foxhayes,602,501,393,484.0,bias-corrected,566,113.1,-3.56227,50.72267
+VodafoneThree,4,294570.0,91364.0,Wonford & St Loye's,518,432,407,403.8,bias-corrected,566,131.1,-3.49464,50.71232
+VodafoneThree,5,287820.0,98114.0,"Morchard Bishop, Copplestone & Newton St Cyres",538,454,84,384.8,bias-corrected,566,124.8,-3.59226,50.77173
