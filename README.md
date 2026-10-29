@@ -22,9 +22,9 @@ The coverage model answers *where is there signal*. This part answers the questi
 
 ### Findings
 
-1. **VMO2 is the most exposed.** 9,400 to 22,900 residents have indoor 4G from a rival but not from VMO2, and almost nobody (84 to 380) has indoor 4G from VMO2 alone. A site at the **University or in Central Exeter pays back in both scenarios**, needing 5-11% of the customers it brings indoor coverage to, against a fair share of about 30%. **Recommendation: build.**
-2. **EE's case depends on the model's bias.** As modelled, its best sites (Pinhoe & Whipton North, the University, Central Exeter) need 36-111% of the customers they cover, which is marginal at best; bias-corrected, the same places need 12-22%. **Recommendation: a targeted drive test in those three areas (a day of measurement) before committing about £450k.** It settles which scenario is right for a fraction of the cost.
-3. **VodafoneThree should not build for coverage.** Its gaps are small and scattered: its one candidate, Exwick & Foxhayes, fails as modelled (56%) and passes only if the bias correction holds (25%). Its opportunity is commercial: **2,000 to 5,200 residents get indoor 4G only from VodafoneThree**, where marketing rather than masts wins customers. Combining the two networks adds indoor 4G for 1,000 to 2,800 residents over Vodafone alone.
+1. **VMO2 is the most exposed.** 9,400 to 22,900 residents have indoor 4G from a rival but not from VMO2, and almost nobody (84 to 380) has indoor 4G from VMO2 alone. A site at the **University or in Central Exeter pays back in both scenarios**, needing 9-18% of the customers it brings indoor coverage to, against a fair share of about 30%. **Recommendation: build.**
+2. **EE's case depends on the model's bias.** As modelled, its best sites (Pinhoe & Whipton North, the University, Central Exeter) need 60-186% of the customers they cover, which does not pay; bias-corrected, the same places need 20-36%. **Recommendation: a targeted drive test in those three areas (a day of measurement) before committing about £750k.** It settles which scenario is right for a fraction of the cost.
+3. **VodafoneThree should not build for coverage.** Its gaps are small and scattered: its one candidate, Exwick & Foxhayes, needs 93% of the customers it covers as modelled and 41% bias-corrected, above a fair share either way. Its opportunity is commercial: **2,000 to 5,200 residents get indoor 4G only from VodafoneThree**, where marketing rather than masts wins customers. Combining the two networks adds indoor 4G for 1,000 to 2,800 residents over Vodafone alone.
 4. **The University area is the prize.** Half its residents are full-time students (Census 2021): heavy data users who choose a network every September. Once customers are weighted by value, it tops VMO2's opportunity list in both scenarios and EE's as modelled.
 
 ### Method
@@ -59,25 +59,25 @@ No operator gives indoor 4G to 795 / 2,374 residents, mostly at the rural edges.
 
 | Operator | Site area | Customers covered | Break-even share, as modelled | Break-even share, bias-corrected |
 |---|---|---|---|---|
-| VMO2 | Pennsylvania & University | 5,404 / 1,568 | **10.5%** (1st) | 36.1% (4th) |
-| VMO2 | Central Exeter | 603 / 10,729 | 93.9% (3rd) | **5.3%** (1st) |
-| VMO2 | Countess Wear & Topsham | 1,472 / 3,035 | 38.5% | **18.7%** |
-| EE | Pinhoe & Whipton North | 1,404 / 4,748 | 40.3% | **11.9%** |
-| EE | Pennsylvania & University | 1,588 / 2,634 | 35.7% | **21.5%** |
-| EE | Central Exeter | 508 / 3,727 | 111.5% | **15.2%** |
-| VodafoneThree | Exwick & Foxhayes | 1,014 / 2,284 | 55.9% | **24.8%** |
+| VMO2 | Pennsylvania & University | 5,404 / 1,568 | **17.5%** (1st) | 60.2% (4th) |
+| VMO2 | Central Exeter | 603 / 10,729 | 156.6% (3rd) | **8.8%** (1st) |
+| VMO2 | Countess Wear & Topsham | 1,472 / 3,035 | 64.1% | 31.1% |
+| EE | Pinhoe & Whipton North | 1,404 / 4,748 | 67.2% | **19.9%** |
+| EE | Pennsylvania & University | 1,588 / 2,634 | 59.5% | 35.8% |
+| EE | Central Exeter | 508 / 3,727 | 185.8% | **25.3%** |
+| VodafoneThree | Exwick & Foxhayes | 1,014 / 2,284 | 93.1% | 41.3% |
 
 VMO2's University and Central Exeter sites overlap: whichever is built first takes most of the other's customers, so one of the two is the build in either scenario. The full lists are in `data/derived/site_plan.csv`.
 
-**Assumptions and sensitivity.** ARPU £13.24 a month (Ofcom, all UK mobile subscribers, Q4 2025), a 50% margin after the cost of serving a subscriber (an assumption), £150k to build a macro site (Ofcom's cost model, £105k in 2007/08 prices, inflated; government-funded rural masts have cost about £478k) and 10% of that a year to run it. Subscribers a site must win or keep to pay back in 5 years:
+**Assumptions and sensitivity.** ARPU £13.24 a month (Ofcom, all UK mobile subscribers, Q4 2025), a 50% margin after the cost of serving a subscriber (an assumption), £250k for a new macro site, all in: finding and acquiring the site, planning permission, power, backhaul, the build and the people planning it. That is the low end of the £250k-750k a new UK site typically costs, depending on location; Ofcom's cost model, about £150k in today's prices, counts mainly equipment and construction, and government-funded rural masts have cost about £478k. Running it costs 10% of that a year. Subscribers a site must win or keep to pay back in 5 years:
 
 | Site cost | ARPU £10 | ARPU £13.24 | ARPU £18 |
 |---|---|---|---|
-| £100k | 500 | 378 | 278 |
-| £150k | 750 | **566** | 417 |
-| £300k | 1,500 | 1,133 | 833 |
+| £250k | 1,250 | **944** | 694 |
+| £500k | 2,500 | 1,888 | 1,389 |
+| £750k | 3,750 | 2,832 | 2,083 |
 
-VMO2's first site stays within the operator's fair share even at £300k and £10 ARPU (1,500 of 5,404 or 10,729 customers covered).
+At the top of the range, VMO2's Central Exeter site still pays if the bias correction holds (2,832 of 10,729 customers, 26%), but its University site as modelled does not (52% of 5,404). So for a hard, expensive site the drive test comes first for VMO2 too; at a typical £250k it is a build.
 
 ### Model vs drive tests
 
