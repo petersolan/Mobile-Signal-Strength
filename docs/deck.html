@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exeter Indoor 4G Briefing</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;600&display=swap">
+<style>
+/* One 16:9 slide per screen; arrow keys or space to move; prints one slide per page */
+:root {
+  --paper: #f7f8f6; --ink: #15201b; --ink-2: #4a5650; --muted: #7c8781; --rule: #d9dfdb; --panel: #ffffff;
+  --ee: #0f9d58; --vmo2: #1a56db; --vt: #e60000; --good: #1f7a4d; --warn: #b7791f; --bad: #b42318;
+  --sans: "IBM Plex Sans", "Segoe UI", Arial, sans-serif; --mono: "IBM Plex Mono", Consolas, monospace;
+}
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #2b302d; }
+body { font-family: var(--sans); color: var(--ink); }
+.deck { display: grid; gap: 28px; padding: 28px max(16px, env(safe-area-inset-left, 0px)); justify-items: center; }
+.slide {
+  width: min(1200px, 100%); aspect-ratio: 16 / 9; background: var(--paper); border-radius: 6px;
+  padding: clamp(18px, 4.2%, 56px) clamp(18px, 5%, 64px); display: grid; grid-template-rows: auto 1fr auto;
+  gap: clamp(8px, 2.2%, 26px); overflow: hidden; container-type: inline-size; scroll-margin: 28px;
+}
+.slide:focus { outline: 3px solid #8fb3a1; outline-offset: 4px; }
+.kicker { font: 600 1.25cqw/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+h1, h2 { margin: 0; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; }
+h1 { font-size: 4.4cqw; line-height: 1.06; max-width: 22ch; }
+h2 { font-size: 2.85cqw; line-height: 1.12; max-width: 34ch; }
+p, li { font-size: 1.55cqw; line-height: 1.45; color: var(--ink-2); margin: 0; }
+.big { font-size: 1.9cqw; }
+.foot { display: flex; justify-content: space-between; font: 1.05cqw var(--mono); color: var(--muted); border-top: 1px solid var(--rule); padding-top: .8cqw; }
+.body { display: grid; gap: 2cqw; align-content: start; min-height: 0; }
+.cols { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 2cqw; }
+.two { display: grid; grid-template-columns: 1.35fr 1fr; gap: 3cqw; align-items: start; min-height: 0; }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 1.6cqw 1.8cqw; display: grid; gap: .8cqw; align-content: start; }
+.card h3 { margin: 0; font-size: 1.7cqw; font-weight: 600; display: flex; align-items: center; gap: .7cqw; }
+.dot { width: 1.1cqw; height: 1.1cqw; border-radius: 50%; display: inline-block; flex: none; }
+.verdict { font: 600 1.15cqw var(--mono); letter-spacing: .06em; text-transform: uppercase; padding: .35cqw .7cqw; border-radius: 4px; justify-self: start; }
+.v-good { background: #e3f1e8; color: var(--good); } .v-warn { background: #f8eedb; color: var(--warn); } .v-bad { background: #f9e3e1; color: var(--bad); }
+.num { font: 600 3.2cqw/1 var(--mono); font-variant-numeric: tabular-nums; }
+.lab { font-size: 1.2cqw; color: var(--muted); }
+table { border-collapse: collapse; width: 100%; font-size: 1.4cqw; }
+th, td { text-align: left; padding: .55cqw 1cqw .55cqw 0; border-bottom: 1px solid var(--rule); }
+th { font: 600 1.05cqw var(--mono); letter-spacing: .05em; text-transform: uppercase; color: var(--muted); }
+td.n { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+img.map { width: 100%; border: 1px solid var(--rule); border-radius: 4px; background: #fff; }
+ul { margin: 0; padding-left: 1.3em; display: grid; gap: .6cqw; }
+svg text { font-family: var(--sans); }
+.title-slide { grid-template-rows: auto 1fr auto; background: #15201b; color: #eef2ef; }
+.title-slide p, .title-slide .kicker { color: #a9b5ae; }
+.title-slide .foot { border-color: #33403a; color: #8c9a92; }
+.title-slide h1 { color: #fff; }
+a { color: inherit; }
+@media print {
+  @page { size: 13.333in 7.5in; margin: 0; }
+  html, body { background: #fff; }
+  .deck { padding: 0; gap: 0; }
+  .slide { width: 13.333in; border-radius: 0; break-after: page; }
+}
+</style>
+</head>
+<body>
+<main class="deck" id="deck">
+
+<section class="slide title-slide" tabindex="-1">
+  <div class="kicker">Partner briefing · Exeter · October 2026</div>
+  <div class="body" style="align-content:center">
+    <h1>Where Exeter's indoor 4G gaps cost customers, and which ones are worth a mast</h1>
+    <p class="big">An independent read from open data: Ofcom drive tests, Environment Agency LiDAR and Census 2021, for 152,419 residents in Exeter and its edges.</p>
+  </div>
+  <div class="foot"><span>Peter S</span><span>github.com/petersolan/Mobile-Signal-Strength</span></div>
+</section>
+
+<section class="slide" tabindex="-1">
+  <div class="kicker">The answer first</div>
+  <div class="body">
+    <h2>Three operators, three different moves</h2>
+    <div class="cols">
+      <div class="card">
+        <h3><span class="dot" style="background:var(--vmo2)"></span>VMO2</h3>
+        <span class="verdict v-good">Build</span>
+        <p>Most exposed: 9,400 to 22,900 residents get indoor 4G from a rival but not from VMO2.</p>
+        <p>One site at the University or Central Exeter pays back in both scenarios, needing <b>9-18%</b> of the customers it covers against a fair share of about 30%.</p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--ee)"></span>EE</h3>
+        <span class="verdict v-warn">Measure first</span>
+        <p>The case turns on how optimistic the model is: its best sites need 60-186% of covered customers as modelled, 20-36% bias-corrected.</p>
+        <p>A one-day drive in three areas settles it before about <b>£750k</b> is committed.</p>
+      </div>
+      <div class="card">
+        <h3><span class="dot" style="background:var(--vt)"></span>VodafoneThree</h3>
+        <span class="verdict v-bad">Don't build, market</span>
+        <p>Its gaps are small and scattered; the best site needs 41-93% of covered customers.</p>
+        <p><b>2,000 to 5,200 residents</b> get indoor 4G only from VodafoneThree. That is a marketing opportunity, not a network one.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Ranges: as modelled / bias-corrected (slide 6)</span><span>2</span></div>
+</section>
+
+<section class="slide" tabindex="-1">
+  <div class="kicker">Where the gaps are</div>
+  <div class="two" style="grid-template-columns: 2.1fr 1fr">
+    <img class="map" src="images/business_case.png" alt="Three maps of Exeter: for EE, VMO2 and VodafoneThree, the addresses where a rival has indoor 4G and the operator does not, with recommended new sites as stars">
+    <div class="body">
+      <h2>Residents a rival covers indoors and you do not</h2>
+      <table>
+        <tr><th>Operator</th><th>As modelled</th><th>Bias-corrected</th></tr>
+        <tr><td>EE</td><td class="n">5,935</td><td class="n">23,189</td></tr>
+        <tr><td>VMO2</td><td class="n">9,429</td><td class="n">22,932</td></tr>
+        <tr><td>VodafoneThree</td><td class="n">1,964</td><td class="n">4,207</td></tr>
+        <tr><td>No operator</td><td class="n">795</td><td class="n">2,374</td></tr>
+      </table>
+      <p>Indoor 4G is Ofcom's -95 dBm. The gaps cluster on valley sides and in the dense centre, where hills and buildings block the existing masts.</p>
+    </div>
+  </div>
+  <div class="foot"><span>Stars: recommended sites, numbered in build order (bias-corrected scenario)</span><span>3</span></div>
+</section>
+
+<section class="slide" tabindex="-1">
+  <div class="kicker">Who the customers are</div>
+  <div class="body">
+    <h2>Not every gap is worth the same: the University area is the prize</h2>
+    <div class="two">
+      <table>
+        <tr><th>Operator</th><th>Defend</th><th>Attack</th><th>Top area to defend</th></tr>
+        <tr><td>EE</td><td class="n">5,120 / 19,736</td><td class="n">864 / 1,908</td><td>University; Central</td></tr>
+        <tr><td>VMO2</td><td class="n">8,419 / 19,900</td><td class="n">72 / 335</td><td>University; Central</td></tr>
+        <tr><td>VodafoneThree</td><td class="n">1,615 / 3,454</td><td class="n">1,795 / 4,716</td><td>Exwick &amp; Foxhayes</td></tr>
+      </table>
+      <div class="card">
+        <span class="num">50%</span>
+        <span class="lab">of residents around the University are full-time students (Census 2021)</span>
+        <p>Heavy data users who pick a network every September. Weighted by value (employed or studying, relative to the area), the University tops VMO2's list in both scenarios.</p>
+      </div>
+    </div>
+    <p><b>Defend</b>: adults a rival covers indoors and the operator does not, the customers it loses on coverage. <b>Attack</b>: adults only it covers, where marketing wins. As modelled / bias-corrected.</p>
+  </div>
+  <div class="foot"><span>Census 2021 via Nomis: TS066 economic activity, TS007A age, per LSOA</span><span>4</span></div>
+</section>
+
+<section class="slide" tabindex="-1">
+  <div class="kicker">The money</div>
+  <div class="two">
+    <div class="body">
+      <h2>Share of covered customers each site must win or keep to pay back in five years</h2>
+      <svg viewBox="0 0 640 330" role="img" aria-label="Break-even share per site, as a range from bias-corrected to as modelled, against a 30 percent fair share">
+        <g font-size="14" fill="#4a5650">
+          <line x1="190" x2="190" y1="10" y2="292" stroke="#d9dfdb"/>
+          <line x1="250" x2="250" y1="10" y2="292" stroke="#b7791f" stroke-dasharray="4 4"/>
+          <text x="254" y="22" fill="#b7791f">fair share ~30%</text>
+          <line x1="390" x2="390" y1="10" y2="292" stroke="#d9dfdb"/>
+          <line x1="590" x2="590" y1="10" y2="292" stroke="#d9dfdb"/>
+        </g>
+        <g font-size="13" fill="#7c8781" font-family="IBM Plex Mono, monospace">
+          <text x="190" y="312" text-anchor="middle">0%</text><text x="390" y="312" text-anchor="middle">100%</text><text x="590" y="312" text-anchor="middle">200%</text>
+        </g>
+        <!-- x = 190 + 2 * pct; each row: bias-corrected (filled) to as modelled (hollow) -->
+        <g font-size="15" fill="#15201b">
+          <text x="0" y="49">VMO2 Central</text>
+          <line x1="207.6" x2="503.2" y1="44" y2="44" stroke="#1a56db" stroke-width="3"/><circle cx="207.6" cy="44" r="7" fill="#1a56db"/><circle cx="503.2" cy="44" r="7" fill="#f7f8f6" stroke="#1a56db" stroke-width="3"/>
+          <text x="0" y="89">VMO2 University</text>
+          <line x1="225" x2="310.4" y1="84" y2="84" stroke="#1a56db" stroke-width="3"/><circle cx="310.4" cy="84" r="7" fill="#1a56db"/><circle cx="225" cy="84" r="7" fill="#f7f8f6" stroke="#1a56db" stroke-width="3"/>
+          <text x="0" y="129">EE Pinhoe</text>
+          <line x1="229.8" x2="324.4" y1="124" y2="124" stroke="#0f9d58" stroke-width="3"/><circle cx="229.8" cy="124" r="7" fill="#0f9d58"/><circle cx="324.4" cy="124" r="7" fill="#f7f8f6" stroke="#0f9d58" stroke-width="3"/>
+          <text x="0" y="169">EE Central</text>
+          <line x1="240.6" x2="561.6" y1="164" y2="164" stroke="#0f9d58" stroke-width="3"/><circle cx="240.6" cy="164" r="7" fill="#0f9d58"/><circle cx="561.6" cy="164" r="7" fill="#f7f8f6" stroke="#0f9d58" stroke-width="3"/>
+          <text x="0" y="209">EE University</text>
+          <line x1="261.6" x2="309" y1="204" y2="204" stroke="#0f9d58" stroke-width="3"/><circle cx="261.6" cy="204" r="7" fill="#0f9d58"/><circle cx="309" cy="204" r="7" fill="#f7f8f6" stroke="#0f9d58" stroke-width="3"/>
+          <text x="0" y="249">VodafoneThree Exwick</text>
+          <line x1="272.6" x2="376.2" y1="244" y2="244" stroke="#e60000" stroke-width="3"/><circle cx="272.6" cy="244" r="7" fill="#e60000"/><circle cx="376.2" cy="244" r="7" fill="#f7f8f6" stroke="#e60000" stroke-width="3"/>
+          <circle cx="196" cy="282" r="6" fill="#4a5650"/><text x="208" y="287" font-size="13" fill="#4a5650">bias-corrected</text>
+          <circle cx="330" cy="282" r="6" fill="#f7f8f6" stroke="#4a5650" stroke-width="2.5"/><text x="342" y="287" font-size="13" fill="#4a5650">as modelled</text>
+        </g>
+      </svg>
+    </div>
+    <div class="body">
+      <div class="card">
+        <span class="num">944</span>
+        <span class="lab">subscribers a £250k site must win or keep</span>
+        <p>£250k all in (site, planning, power, backhaul, build), 10% a year to run, £13.24 ARPU (Ofcom, Q4 2025), 50% margin, five-year payback.</p>
+      </div>
+      <table>
+        <tr><th>Site cost</th><th>Subscribers</th></tr>
+        <tr><td>£250k</td><td class="n">944</td></tr>
+        <tr><td>£500k</td><td class="n">1,888</td></tr>
+        <tr><td>£750k</td><td class="n">2,832</td></tr>
+      </table>
+      <p>VMO2's Central site still pays at £750k if the bias correction holds (26% of 10,729).</p>
+    </div>
+  </div>
+  <div class="foot"><span>Break-even instead of a guessed switching rate: no public data says how many covered customers switch</span><span>5</span></div>
+</section>
+
+<section class="slide" tabindex="-1">
+  <div class="kicker">How sure we are</div>
+  <div class="two">
+    <div class="body">
+      <h2>The model is right about where, and optimistic about how much</h2>
+      <table>
+        <tr><th>Network</th><th>Indoor, measured</th><th>Indoor, modelled</th><th>Same class</th></tr>
+        <tr><td>EE</td><td class="n">87.6%</td><td class="n">98.4%</td><td class="n">87%</td></tr>
+        <tr><td>O2</td><td class="n">80.7%</td><td class="n">89.4%</td><td class="n">80%</td></tr>
+        <tr><td>Vodafone</td><td class="n">85.5%</td><td class="n">84.0%</td><td class="n">81%</td></tr>
+        <tr><td>Three</td><td class="n">65.5%</td><td class="n">73.6%</td><td class="n">78%</td></tr>
+      </table>
+      <p>On drive-test areas the model never saw (one in five 1 km squares held out), it overstates indoor coverage by 8-11 points for EE, O2 and Three.</p>
+    </div>
+    <div class="body">
+      <div class="card">
+        <h3>So every result comes twice</h3>
+        <p><b>As modelled</b>: gaps are lower bounds.</p>
+        <p><b>Bias-corrected</b>: each network's signal lowered by its held-out mean error (EE 6.3 dB, O2 4.8, Three 4.8, Vodafone 3.9).</p>
+        <p>The two agree on where to build, usually within 500 m, and on the order of the operators. They differ on how much money is at stake.</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Same analysis also written in SQL (DuckDB) and checked against the Python: every figure agrees</span><span>6</span></div>
+</section>
+
+<section class="slide" tabindex="-1">
+  <div class="kicker">The pilot</div>
+  <div class="two">
+    <div class="body">
+      <h2>Spread the drive over places, not readings: the model's error is local</h2>
+      <table>
+        <tr><th>1 km squares driven</th><th>Right call</th><th>95% range of the measured error</th></tr>
+        <tr><td class="n">1</td><td class="n">39%</td><td class="n">±21 dB</td></tr>
+        <tr><td class="n">3</td><td class="n">50%</td><td class="n">±12 dB</td></tr>
+        <tr><td class="n">5</td><td class="n">58%</td><td class="n">±10 dB</td></tr>
+        <tr><td class="n">8</td><td class="n">63%</td><td class="n">±8 dB</td></tr>
+        <tr><td class="n">12</td><td class="n">68%</td><td class="n">±6 dB</td></tr>
+      </table>
+      <p>75% of EE's error varies between 1 km squares; readings within a square mostly agree, so 100 readings per square tell little more than 10. And the optimism is uneven, so even 12 squares get a citywide bias right only about two times in three. Worst case of the two possible truths, 30 road squares per 1 km square.</p>
+    </div>
+    <div class="body">
+      <div class="card">
+        <h3>Decision rule</h3>
+        <p>Drive EE's three target areas (Pinhoe, the University, Central Exeter) with a scanner and compare each 20 m road square with the model.</p>
+        <p>Do not estimate a bias and apply it. Drive every 1 km square inside each candidate site's footprint, about 10 road squares in each, and count the customers there without indoor 4G. Build where that count clears the 944-subscriber break-even at a fair share.</p>
+      </div>
+      <div class="card">
+        <h3>After a site is built</h3>
+        <p>Compare covered neighbourhoods with similar ones the site does not reach, before and after: indoor coverage share, port-outs and data traffic, over three months each side (difference in differences).</p>
+      </div>
+    </div>
+  </div>
+  <div class="foot"><span>Simulated from EE's held-out errors, resampling whole 1 km squares, 4,000 pilots per design</span><span>7</span></div>
+</section>
+
+<section class="slide" tabindex="-1">
+  <div class="kicker">What would sharpen it</div>
+  <div class="two">
+    <div class="body">
+      <h2>Open data gets the direction; partner data would get the numbers</h2>
+      <ul>
+        <li><b>Real cell locations and antenna patterns</b>: masts here are estimated from where the signal is strongest.</li>
+        <li><b>Device-side measurements</b>: they see indoors and every street, where drive tests see only roads.</li>
+        <li><b>Local market share, churn and port-outs by postcode</b>: replace the national 30% share and the break-even framing with actual switching.</li>
+        <li><b>Capacity</b>: busy cells need 1,800-2,600 MHz layers on existing masts rather than new sites; drive tests measure signal, not load.</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3>How it was built</h3>
+      <p>Python and DuckDB SQL on Ofcom's drive tests (2022-2024), 1 m LiDAR and Census 2021. Path loss with terrain diffraction, calibrated per operator and validated on held-out areas.</p>
+      <p>Coverage checker: <a href="coverage.html">petersolan.github.io/Mobile-Signal-Strength/coverage.html</a></p>
+      <p>Code and method: <a href="https://github.com/petersolan/Mobile-Signal-Strength">github.com/petersolan/Mobile-Signal-Strength</a></p>
+    </div>
+  </div>
+  <div class="foot"><span>Peter S</span><span>8</span></div>
+</section>
+
+</main>
+<script>
+// arrow keys, page keys and space move between slides
+const slides = [...document.querySelectorAll(".slide")];
+function current() {
+  const mid = innerHeight / 2;
+  let best = 0, dist = Infinity;
+  slides.forEach((s, i) => { const r = s.getBoundingClientRect(); const d = Math.abs(r.top + r.height / 2 - mid); if (d < dist) { dist = d; best = i; } });
+  return best;
+}
+addEventListener("keydown", e => {
+  const next = ["ArrowRight", "ArrowDown", "PageDown", " "].includes(e.key), prev = ["ArrowLeft", "ArrowUp", "PageUp"].includes(e.key);
+  if (!next && !prev) return;
+  e.preventDefault();
+  const i = Math.max(0, Math.min(slides.length - 1, current() + (next ? 1 : -1)));
+  slides[i].scrollIntoView({ behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center" });
+  slides[i].focus({ preventScroll: true });
+});
+</script>
+<!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "3211474cf009410a88d7addf6d1ba4a8"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>

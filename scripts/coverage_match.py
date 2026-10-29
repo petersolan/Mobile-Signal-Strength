@@ -25,7 +25,9 @@ def square(d):
     return (d.x // 1000).astype(int).astype(str) + "_" + (d.y // 1000).astype(int).astype(str)
 
 
-def main():
+def held_out():
+    """Measured and modelled 4G RSRP on the held-out 20 m road squares, per operator, with each square's
+    1 km validation square (the model refitted without them)."""
     m = B.Model(pd.read_parquet(EXTRACTS / "addresses_population.parquet"))
     r4, best = load_readings("4G"), B.load_best("4G")
     squares = square(r4).unique()
@@ -33,14 +35,20 @@ def main():
     cells4 = B.fit_cells4(m, r4[~square(r4).isin(test)])
     sources, cal = B.fit_tech(m, "4G", cells4, best[~square(best).isin(test)])
     held = bin_readings(best[square(best).isin(test)], keys=("op",))
-
-    rows = []
+    out = []
     for op, h in held.groupby("op"):
         k = cal[op]
         pts = m.points(h.x.values, h.y.values)
         pred = (m.best(sources[sources.op == op], [pts])[0] + k["clutter"] * (pts["clutter"] - k["clutter_mean"])
                 + k["offset"] + m.at(k["corr"], h.x.values, h.y.values))
-        measured, modelled = B.classes(h.rsrp.values, "4G"), B.classes(pred, "4G")
+        out.append(h.assign(modelled=pred, km_square=square(h).values))
+    return pd.concat(out, ignore_index=True)
+
+
+def main():
+    rows = []
+    for op, h in held_out().groupby("op"):
+        measured, modelled = B.classes(h.rsrp.values, "4G"), B.classes(h.modelled.values, "4G")
         row = dict(operator=OPERATORS[op], squares_20m=len(h))
         for i, c in enumerate(CLASSES):
             row[f"measured_{c}_pct"] = 100 * (measured == i).mean()
