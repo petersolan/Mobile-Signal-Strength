@@ -3,6 +3,7 @@
 Measured 4G and 5G signal strength on Exeter's roads from Ofcom's open drive-test data, a coverage model built from it (masts estimated from the measurements, hills from LiDAR, calibrated and validated against the drive tests, counted against every resident's address), and a business case on top: where each operator loses customers to its rivals on indoor coverage, which gaps matter most, and which new sites would pay back.
 
 - **[Business case](#business-case-coverage-gaps-opportunities-and-where-to-build)**: competitive gaps per neighbourhood, opportunity scoring with Census 2021, and a costed site plan per operator with break-even and sensitivity.
+- **[Executive briefing](https://petersolan.github.io/Mobile-Signal-Strength/deck.html)**: the business case as eight slides for a network and commercial leadership audience.
 - **[Coverage checker](https://petersolan.github.io/Mobile-Signal-Strength/coverage.html)**: modelled 4G and 5G per operator, as coverage classes or dBm; residents with indoor 4G or good 5G in any area you pick or draw, with CSV export. [How it works](#coverage-checker-modelled).
 - **[Signal Atlas](https://petersolan.github.io/Mobile-Signal-Strength/)**: the measurements themselves; switch network, operator and year, flat or in 3D.
 
@@ -22,9 +23,9 @@ The coverage model answers *where is there signal*. This part answers the questi
 
 ### Findings
 
-1. **VMO2 is the most exposed.** 9,400 to 22,900 residents have indoor 4G from a rival but not from VMO2, and almost nobody (84 to 380) has indoor 4G from VMO2 alone. A site at the **University or in Central Exeter pays back in both scenarios**, needing 5-11% of the customers it brings indoor coverage to, against a fair share of about 30%. **Recommendation: build.**
-2. **EE's case depends on the model's bias.** As modelled, its best sites (Pinhoe & Whipton North, the University, Central Exeter) need 36-111% of the customers they cover, which is marginal at best; bias-corrected, the same places need 12-22%. **Recommendation: a targeted drive test in those three areas (a day of measurement) before committing about £450k.** It settles which scenario is right for a fraction of the cost.
-3. **VodafoneThree should not build for coverage.** Its gaps are small and scattered: its one candidate, Exwick & Foxhayes, fails as modelled (56%) and passes only if the bias correction holds (25%). Its opportunity is commercial: **2,000 to 5,200 residents get indoor 4G only from VodafoneThree**, where marketing rather than masts wins customers. Combining the two networks adds indoor 4G for 1,000 to 2,800 residents over Vodafone alone.
+1. **VMO2 is the most exposed.** 9,400 to 22,900 residents have indoor 4G from a rival but not from VMO2, and almost nobody (84 to 380) has indoor 4G from VMO2 alone. A site at the **University or in Central Exeter pays back in both scenarios**, needing 9-18% of the customers it brings indoor coverage to, against a fair share of about 30%. **Recommendation: build.**
+2. **EE's case depends on the model's bias.** As modelled, its best sites (Pinhoe & Whipton North, the University, Central Exeter) need 60-186% of the customers they cover, which does not pay; bias-corrected, the same places need 20-36%. **Recommendation: a targeted drive test in those three areas before committing about £750k** ([how big](#pilot-how-to-settle-ees-case)). It settles which scenario is right for a fraction of the cost.
+3. **VodafoneThree should not build for coverage.** Its gaps are small and scattered: its one candidate, Exwick & Foxhayes, needs 93% of the customers it covers as modelled and 41% bias-corrected, above a fair share either way. Its opportunity is commercial: **2,000 to 5,200 residents get indoor 4G only from VodafoneThree**, where marketing rather than masts wins customers. Combining the two networks adds indoor 4G for 1,000 to 2,800 residents over Vodafone alone.
 4. **The University area is the prize.** Half its residents are full-time students (Census 2021): heavy data users who choose a network every September. Once customers are weighted by value, it tops VMO2's opportunity list in both scenarios and EE's as modelled.
 
 ### Method
@@ -33,6 +34,7 @@ The coverage model answers *where is there signal*. This part answers the questi
 2. **Opportunity scoring** (`scripts/fetch_demographics.py`, `scripts/opportunity.py`). Census 2021 from the Nomis API (TS066 economic activity, TS007A age) per LSOA. **Customers** are adult residents; their **value** is the share employed or in full-time education, relative to the area average (the data-heavy, mostly pay-monthly customers). Two plays per operator: **defend** (at-risk customers: fix coverage) and **attack** (customers only it covers: market there), each scored as customers x value.
 3. **Site plan** (`scripts/site_plan.py`). A new site is modelled like the operator's existing cells: terrain diffraction over the LiDAR surface, the operator's clutter loss and calibration, the median power and slope of its 4G cells below 1 GHz, which in Exeter are 800 MHz (LTE Band 20, the band that carries indoor coverage), a 25 m mast. Higher bands (1.8, 2.1 and 2.6 GHz) lose 7-10 dB more before walls and hills, so they add capacity rather than reach indoor not-spots. Candidates sit on a 250 m grid near at-risk customers; five sites per operator are chosen greedily by value-weighted customers gained, so each next site only counts what the earlier ones did not cover.
 4. **Break-even.** No public data says how many newly covered people switch or stay, so instead of guessing it each site gets the number it must win or keep to pay back in 5 years, as a share of the customers it covers. Below the operator's fair share (~30%) is plausible; above it, the site needs more than coverage to justify it.
+5. **The same analysis in SQL** (`sql/business_case.sql`, run by `scripts/business_case_sql.py`). Steps 1 and 2 again, as DuckDB SQL straight from the Parquet and CSV inputs: the four networks unpivoted to one row per address and network, the scenarios as a cross join, rivals as a lookup table, and the at-risk, advantage, defend and attack counts as filtered aggregates. The script checks it against the pandas results: all 168 neighbourhood rows, 8 summary rows and 126 opportunity rows agree exactly.
 
 ### Results
 
@@ -59,25 +61,43 @@ No operator gives indoor 4G to 795 / 2,374 residents, mostly at the rural edges.
 
 | Operator | Site area | Customers covered | Break-even share, as modelled | Break-even share, bias-corrected |
 |---|---|---|---|---|
-| VMO2 | Pennsylvania & University | 5,404 / 1,568 | **10.5%** (1st) | 36.1% (4th) |
-| VMO2 | Central Exeter | 603 / 10,729 | 93.9% (3rd) | **5.3%** (1st) |
-| VMO2 | Countess Wear & Topsham | 1,472 / 3,035 | 38.5% | **18.7%** |
-| EE | Pinhoe & Whipton North | 1,404 / 4,748 | 40.3% | **11.9%** |
-| EE | Pennsylvania & University | 1,588 / 2,634 | 35.7% | **21.5%** |
-| EE | Central Exeter | 508 / 3,727 | 111.5% | **15.2%** |
-| VodafoneThree | Exwick & Foxhayes | 1,014 / 2,284 | 55.9% | **24.8%** |
+| VMO2 | Pennsylvania & University | 5,404 / 1,568 | **17.5%** (1st) | 60.2% (4th) |
+| VMO2 | Central Exeter | 603 / 10,729 | 156.6% (3rd) | **8.8%** (1st) |
+| VMO2 | Countess Wear & Topsham | 1,472 / 3,035 | 64.1% | 31.1% |
+| EE | Pinhoe & Whipton North | 1,404 / 4,748 | 67.2% | **19.9%** |
+| EE | Pennsylvania & University | 1,588 / 2,634 | 59.5% | 35.8% |
+| EE | Central Exeter | 508 / 3,727 | 185.8% | **25.3%** |
+| VodafoneThree | Exwick & Foxhayes | 1,014 / 2,284 | 93.1% | 41.3% |
 
 VMO2's University and Central Exeter sites overlap: whichever is built first takes most of the other's customers, so one of the two is the build in either scenario. The full lists are in `data/derived/site_plan.csv`.
 
-**Assumptions and sensitivity.** ARPU £13.24 a month (Ofcom, all UK mobile subscribers, Q4 2025), a 50% margin after the cost of serving a subscriber (an assumption), £150k to build a macro site (Ofcom's cost model, £105k in 2007/08 prices, inflated; government-funded rural masts have cost about £478k) and 10% of that a year to run it. Subscribers a site must win or keep to pay back in 5 years:
+**Assumptions and sensitivity.** ARPU £13.24 a month (Ofcom, all UK mobile subscribers, Q4 2025), a 50% margin after the cost of serving a subscriber (an assumption), £250k for a new macro site, all in: finding and acquiring the site, planning permission, power, backhaul, the build and the people planning it. That is the low end of the £250k-750k a new UK site typically costs, depending on location; Ofcom's cost model, about £150k in today's prices, counts mainly equipment and construction, and government-funded rural masts have cost about £478k. Running it costs 10% of that a year. Subscribers a site must win or keep to pay back in 5 years:
 
 | Site cost | ARPU £10 | ARPU £13.24 | ARPU £18 |
 |---|---|---|---|
-| £100k | 500 | 378 | 278 |
-| £150k | 750 | **566** | 417 |
-| £300k | 1,500 | 1,133 | 833 |
+| £250k | 1,250 | **944** | 694 |
+| £500k | 2,500 | 1,888 | 1,389 |
+| £750k | 3,750 | 2,832 | 2,083 |
 
-VMO2's first site stays within the operator's fair share even at £300k and £10 ARPU (1,500 of 5,404 or 10,729 customers covered).
+At the top of the range, VMO2's Central Exeter site still pays if the bias correction holds (2,832 of 10,729 customers, 26%), but its University site as modelled does not (52% of 5,404). So for a hard, expensive site the drive test comes first for VMO2 too; at a typical £250k it is a build.
+
+### Pilot: how to settle EE's case
+
+EE's recommendation is a drive test before building. How big a drive? `scripts/pilot_design.py` resamples EE's errors on the held-out areas (707 road squares in 16 1 km squares, mean +6.3 dB) as if they were pilots of different sizes, 4,000 per design, keeping each 1 km square's readings together:
+
+| 1 km squares driven | Right call, worst case | 95% range of the measured mean error |
+|---|---|---|
+| 1 | 39% | ±21 dB |
+| 3 | 50% | ±12 dB |
+| 5 | 58% | ±10 dB |
+| 8 | 63% | ±8 dB |
+| 12 | 68% | ±6 dB |
+
+30 road squares per 1 km square; the right call is the worse of the two possible truths (the model unbiased, or as optimistic as the held-out areas), with the rule "build if the mean error is above 3.1 dB".
+
+Two things stand out. **75% of the error varies between 1 km squares**: readings in the same square mostly agree, so 100 per square barely beat 10 (`data/derived/pilot_design.csv` has both). And **the optimism is uneven**, a few squares far off and most close, so even 12 squares estimate a citywide bias reliably only about two times in three. The pilot should therefore not estimate a bias at all. It should **measure the decision directly: drive every 1 km square inside each candidate site's footprint**, about 10 road squares in each, and count the customers there without indoor 4G. That is a day or two of driving against about £750k of sites.
+
+After a site is built, the same areas give the evaluation: covered neighbourhoods against similar ones the site does not reach, before and after (difference in differences), on indoor coverage share, port-outs and data traffic, three months each side.
 
 ### Model vs drive tests
 
@@ -182,6 +202,10 @@ scripts/
   fetch_demographics.py  Census 2021 profile per LSOA from the Nomis API
   opportunity.py       defend / attack customers, weighted by value
   site_plan.py         new sites per operator, greedy choice, break-even and sensitivity
+  business_case_sql.py runs sql/business_case.sql in DuckDB and checks it against the pandas results
+  pilot_design.py      how much driving settles EE's case, from the held-out errors
+sql/
+  business_case.sql    the gap and opportunity analysis in SQL
 viz/
   atlas.template.html  the Signal Atlas page (MapLibre GL JS 4.7.1)
   build_page.py        inlines the data and stylesheet into docs/index.html
@@ -215,7 +239,9 @@ python scripts/coverage_match.py      # ~5 minutes
 python scripts/gap_analysis.py
 python scripts/fetch_demographics.py  # Census 2021 from the Nomis API
 python scripts/opportunity.py
+python scripts/business_case_sql.py   # the same gaps and opportunities in SQL, checked against the above
 python scripts/site_plan.py           # ~10 minutes
+python scripts/pilot_design.py        # ~5 minutes
 python viz/build_business_case_map.py
 ```
 
@@ -240,6 +266,7 @@ To study another area, change `BBOX` in `scripts/config.py`. Check that `RELEASE
 | `data/derived/lsoa_demographics.csv` | Census 2021 adults, employed, full-time students and retired per LSOA |
 | `data/derived/opportunity_msoa.csv` | defend and attack customers and scores per scenario, MSOA and operator |
 | `data/derived/site_plan.csv`, `site_sensitivity.csv` | recommended sites per operator and scenario with customers gained and break-even; break-even by site cost and ARPU |
+| `data/derived/pilot_design.csv` | simulated pilot drives for EE: 1 km squares x road squares, 95% range of the measured error, how often the call is right |
 
 ## Data sources and licences
 

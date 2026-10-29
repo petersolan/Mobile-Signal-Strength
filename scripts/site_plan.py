@@ -43,7 +43,7 @@ LOW_BAND_MHZ = 1000
 # Business-case assumptions (base case; ranges in site_sensitivity.csv)
 ARPU = 13.24           # GBP per subscriber per month, Ofcom Q4 2025 (all mobile subscribers)
 MARGIN = 0.5           # share of ARPU left after the cost of serving a subscriber (assumption)
-CAPEX = 150_000        # GBP per new macro site: Ofcom cost model, GBP 105k in 2007/08 prices, inflated
+CAPEX = 250_000        # GBP per new macro site, all in (acquisition, planning, power, backhaul); 250-750k
 OPEX_SHARE = 0.10      # running cost per year, share of capex (Ofcom cost model)
 PAYBACK_YEARS = 5
 MARKET_SHARE = 0.30    # each of the three operators, roughly
@@ -144,7 +144,7 @@ def main():
              "break_even_pct"]]
           .to_string(index=False))
 
-    rows = [dict(capex=c, arpu=p, break_even_subs=round(break_even(c, p))) for c in (100_000, 150_000, 300_000)
+    rows = [dict(capex=c, arpu=p, break_even_subs=round(break_even(c, p))) for c in (250_000, 500_000, 750_000)
             for p in (10.0, ARPU, 18.0)]
     sens = pd.DataFrame(rows)
     sens.to_csv(DERIVED / "site_sensitivity.csv", index=False)

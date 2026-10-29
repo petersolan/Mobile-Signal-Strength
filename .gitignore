@@ -15,6 +15,7 @@ data/derived/*
 !data/derived/lsoa_demographics.csv
 !data/derived/opportunity_msoa.csv
 !data/derived/site_*.csv
+!data/derived/pilot_design.csv
 
 # Python
 __pycache__/
