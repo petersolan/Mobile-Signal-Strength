@@ -1,13 +1,13 @@
 network,operator,prediction,squares_20m,bias_db,mae_db,rmse_db,class_agreement_pct
-4G,Three,model,708,6.61,12.64,16.75,73.31
-4G,Three,model + correction,708,4.9,8.17,10.87,76.69
+4G,Three,model,708,6.48,12.57,16.74,74.29
+4G,Three,model + correction,708,4.75,8.1,10.85,77.68
 4G,EE,model,707,8.64,14.14,19.86,85.57
 4G,EE,model + correction,707,6.26,10.6,14.83,87.13
 4G,O2,model,706,7.08,11.74,17.17,79.46
 4G,O2,model + correction,706,4.76,9.64,13.58,79.46
 4G,Vodafone,model,711,6.01,11.9,15.95,80.73
 4G,Vodafone,model + correction,711,3.89,9.41,12.81,81.01
-5G,Three,model,661,5.92,12.97,17.17,54.61
-5G,Three,model + correction,661,4.34,9.02,11.54,61.57
+5G,Three,model,661,6.0,12.74,17.01,57.34
+5G,Three,model + correction,661,4.32,8.82,11.39,64.6
 5G,EE,model,688,1.33,13.03,16.55,50.58
 5G,EE,model + correction,688,0.12,9.1,12.05,63.95

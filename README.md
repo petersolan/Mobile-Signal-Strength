@@ -24,14 +24,14 @@ The coverage model answers *where is there signal*. This part answers the questi
 
 1. **VMO2 is the most exposed.** 9,400 to 22,900 residents have indoor 4G from a rival but not from VMO2, and almost nobody (84 to 380) has indoor 4G from VMO2 alone. A site at the **University or in Central Exeter pays back in both scenarios**, needing 5-11% of the customers it brings indoor coverage to, against a fair share of about 30%. **Recommendation: build.**
 2. **EE's case depends on the model's bias.** As modelled, its best sites (Pinhoe & Whipton North, the University, Central Exeter) need 36-111% of the customers they cover, which is marginal at best; bias-corrected, the same places need 12-22%. **Recommendation: a targeted drive test in those three areas (a day of measurement) before committing about £450k.** It settles which scenario is right for a fraction of the cost.
-3. **VodafoneThree should not build for coverage.** Its gaps are small and scattered: its one candidate, Exwick & Foxhayes, fails as modelled (57%) and passes only if the bias correction holds (25%). Its opportunity is commercial: **2,000 to 5,200 residents get indoor 4G only from VodafoneThree**, where marketing rather than masts wins customers. Combining the two networks adds indoor 4G for 1,100 to 2,900 residents over Vodafone alone.
+3. **VodafoneThree should not build for coverage.** Its gaps are small and scattered: its one candidate, Exwick & Foxhayes, fails as modelled (56%) and passes only if the bias correction holds (25%). Its opportunity is commercial: **2,000 to 5,200 residents get indoor 4G only from VodafoneThree**, where marketing rather than masts wins customers. Combining the two networks adds indoor 4G for 1,000 to 2,800 residents over Vodafone alone.
 4. **The University area is the prize.** Half its residents are full-time students (Census 2021): heavy data users who choose a network every September. Once customers are weighted by value, it tops VMO2's opportunity list in both scenarios and EE's as modelled.
 
 ### Method
 
 1. **Competitive gaps** (`scripts/gap_analysis.py`). Each address is classed for indoor 4G (Ofcom's -95 dBm) per operator. Per neighbourhood (MSOA): the share of residents with indoor 4G, the gap to the best rival, residents **at risk** (a rival covers them indoors, the operator does not) and residents **only this operator** covers. Indoor 4G only: the 5G model is measured for EE and Three alone, so 5G is left out of the comparison.
 2. **Opportunity scoring** (`scripts/fetch_demographics.py`, `scripts/opportunity.py`). Census 2021 from the Nomis API (TS066 economic activity, TS007A age) per LSOA. **Customers** are adult residents; their **value** is the share employed or in full-time education, relative to the area average (the data-heavy, mostly pay-monthly customers). Two plays per operator: **defend** (at-risk customers: fix coverage) and **attack** (customers only it covers: market there), each scored as customers x value.
-3. **Site plan** (`scripts/site_plan.py`). A new site is modelled like the operator's existing cells: terrain diffraction over the LiDAR surface, the operator's clutter loss and calibration, the median power and slope of its 800 MHz cells (the band that carries indoor coverage), a 25 m mast. Candidates sit on a 250 m grid near at-risk customers; five sites per operator are chosen greedily by value-weighted customers gained, so each next site only counts what the earlier ones did not cover.
+3. **Site plan** (`scripts/site_plan.py`). A new site is modelled like the operator's existing cells: terrain diffraction over the LiDAR surface, the operator's clutter loss and calibration, the median power and slope of its 4G cells below 1 GHz, which in Exeter are 800 MHz (LTE Band 20, the band that carries indoor coverage), a 25 m mast. Higher bands (1.8, 2.1 and 2.6 GHz) lose 7-10 dB more before walls and hills, so they add capacity rather than reach indoor not-spots. Candidates sit on a 250 m grid near at-risk customers; five sites per operator are chosen greedily by value-weighted customers gained, so each next site only counts what the earlier ones did not cover.
 4. **Break-even.** No public data says how many newly covered people switch or stay, so instead of guessing it each site gets the number it must win or keep to pay back in 5 years, as a share of the customers it covers. Below the operator's fair share (~30%) is plausible; above it, the site needs more than coverage to justify it.
 
 ### Results
@@ -40,20 +40,20 @@ The coverage model answers *where is there signal*. This part answers the questi
 
 | Operator | Indoor 4G | At risk: a rival covers them indoors, the operator does not | Only this operator covers them indoors |
 |---|---|---|---|
-| EE | 95.6% / 83.2% | 5,935 / 23,196 | 1,049 / 2,358 |
-| VMO2 | 93.3% / 83.4% | 9,429 / 22,939 | 84 / 380 |
-| VodafoneThree | 98.2% / 95.7% | 1,910 / 4,132 | 1,953 / 5,228 |
+| EE | 95.6% / 83.2% | 5,935 / 23,189 | 1,049 / 2,355 |
+| VMO2 | 93.3% / 83.4% | 9,429 / 22,932 | 84 / 380 |
+| VodafoneThree | 98.2% / 95.7% | 1,964 / 4,207 | 1,953 / 5,221 |
 | *Vodafone before the merger* | *97.5% / 93.8%* | *2,959 / 6,765* | *1,924 / 4,967* |
 
-No operator gives indoor 4G to 795 / 2,367 residents, mostly at the rural edges.
+No operator gives indoor 4G to 795 / 2,374 residents, mostly at the rural edges.
 
 **Opportunities**: adult customers to defend and to attack, as modelled / bias-corrected:
 
 | Operator | Defend (customers) | Attack (customers) | Top defend areas |
 |---|---|---|---|
-| EE | 5,120 / 19,742 | 864 / 1,911 | Pennsylvania & University; Central Exeter; Pinhoe & Whipton North |
-| VMO2 | 8,419 / 19,906 | 72 / 335 | Pennsylvania & University; Central Exeter; Exwick & Foxhayes |
-| VodafoneThree | 1,571 / 3,392 | 1,795 / 4,722 | Exwick & Foxhayes |
+| EE | 5,120 / 19,736 | 864 / 1,908 | Pennsylvania & University; Central Exeter; Pinhoe & Whipton North |
+| VMO2 | 8,419 / 19,900 | 72 / 335 | Pennsylvania & University; Central Exeter; Exwick & Foxhayes |
+| VodafoneThree | 1,615 / 3,454 | 1,795 / 4,716 | Exwick & Foxhayes |
 
 **Recommended sites**: the places that come out in both scenarios (within about 500 m), the customers each would bring indoor coverage to (as modelled / bias-corrected), and the share of them it must win or keep to pay back in 5 years:
 
@@ -65,7 +65,7 @@ No operator gives indoor 4G to 795 / 2,367 residents, mostly at the rural edges.
 | EE | Pinhoe & Whipton North | 1,404 / 4,748 | 40.3% | **11.9%** |
 | EE | Pennsylvania & University | 1,588 / 2,634 | 35.7% | **21.5%** |
 | EE | Central Exeter | 508 / 3,727 | 111.5% | **15.2%** |
-| VodafoneThree | Exwick & Foxhayes | 989 / 2,281 | 57.3% | **24.8%** |
+| VodafoneThree | Exwick & Foxhayes | 1,014 / 2,284 | 55.9% | **24.8%** |
 
 VMO2's University and Central Exeter sites overlap: whichever is built first takes most of the other's customers, so one of the two is the build in either scenario. The full lists are in `data/derived/site_plan.csv`.
 
@@ -88,14 +88,14 @@ Does the modelled coverage match the measurements? On the held-out 1 km squares 
 | EE | 87.6% | 98.4% | 87% | 12% | 1% |
 | O2 (VMO2) | 80.7% | 89.4% | 80% | 15% | 6% |
 | Vodafone | 85.5% | 84.0% | 81% | 9% | 10% |
-| Three | 65.5% | 74.6% | 77% | 16% | 7% |
+| Three | 65.5% | 73.6% | 78% | 15% | 7% |
 
-The model gets the class right in 77-87% of places it has not seen, but it overstates indoor coverage by 9-11 points for EE, O2 and Three: it reproduces the typical signal, not the deepest shadows behind hills and buildings. So every result above is given twice: **as modelled**, and **bias-corrected**, with each operator's 4G lowered by its mean error on the held-out areas (EE 6.3 dB, Three 4.9, O2 4.8, Vodafone 3.9). As modelled, the gaps are lower bounds; the bias-corrected figures sit closer to the drive tests. The two scenarios agree on where to build and on the order of the operators; they differ on how much is at stake.
+The model gets the class right in 78-87% of places it has not seen, but it overstates indoor coverage by 8-11 points for EE, O2 and Three: it reproduces the typical signal, not the deepest shadows behind hills and buildings. So every result above is given twice: **as modelled**, and **bias-corrected**, with each operator's 4G lowered by its mean error on the held-out areas (EE 6.3 dB, Three 4.8, O2 4.8, Vodafone 3.9). As modelled, the gaps are lower bounds; the bias-corrected figures sit closer to the drive tests. The two scenarios agree on where to build and on the order of the operators; they differ on how much is at stake.
 
 ### Limits
 
 - Coverage is modelled from 2022-2024 drive tests on public roads, with estimated mast positions and no antenna patterns; it is an estimate from open data, not an operator's coverage map.
-- Market share and ARPU are national figures; there is no public local data. The margin is an assumption. New sites are modelled as one 800 MHz site with the operator's median cell, without the random shadow fading of the coverage grid, so customers gained are upper estimates. Capacity, 5G and fixed wireless are not included.
+- Market share and ARPU are national figures; there is no public local data. The margin is an assumption. New sites are modelled as one 4G 800 MHz site with the operator's median cell, without the random shadow fading of the coverage grid, so customers gained are upper estimates. Capacity, 5G and fixed wireless are not included.
 - Census 2021 counts students at their term-time address, which is what this question needs. Some edge neighbourhoods are only partly inside the study area.
 
 ## What the data shows
@@ -154,8 +154,8 @@ With the road correction; the model alone is 16–20 dB RMSE. Tuned propagation 
 | Operator | 4G indoor | 4G outdoor only | 5G very high confidence | 5G high | No 5G |
 |---|---|---|---|---|---|
 | EE | 96.6% | 3.3% | 85.0% | 13.5% | 1.5% |
-| Vodafone | 98.1% | 1.8% | 25.1%* | 34.8%* | 40.1%* |
-| VMO2 | 94.1% | 5.2% | 32.6%* | 26.0%* | 41.4%* |
+| Vodafone | 98.1% | 1.8% | 26.4%* | 35.7%* | 37.8%* |
+| VMO2 | 94.1% | 5.2% | 33.9%* | 26.3%* | 39.8%* |
 
 \* synthetic 5G.
 
